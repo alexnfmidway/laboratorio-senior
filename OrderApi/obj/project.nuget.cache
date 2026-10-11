@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "dgSpecHash": "iQnU7mNYmkY=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\anfsusax\\Documents\\Eu\\laboratorio-senior\\DistributedTracingDemo\\OrderApi\\OrderApi.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\anfsusax\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.12\\microsoft.aspnetcore.openapi.10.0.12.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\microsoft.extensions.http.polly\\10.0.12\\microsoft.extensions.http.polly.10.0.12.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\microsoft.openapi\\2.12.0\\microsoft.openapi.2.12.0.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry\\1.19.1\\opentelemetry.1.19.1.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.api\\1.19.1\\opentelemetry.api.1.19.1.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.api.providerbuilderextensions\\1.19.1\\opentelemetry.api.providerbuilderextensions.1.19.1.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.exporter.opentelemetryprotocol\\1.19.1\\opentelemetry.exporter.opentelemetryprotocol.1.19.1.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.extensions.hosting\\1.19.1\\opentelemetry.extensions.hosting.1.19.1.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.instrumentation.aspnetcore\\1.19.0\\opentelemetry.instrumentation.aspnetcore.1.19.0.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\opentelemetry.instrumentation.http\\1.19.0\\opentelemetry.instrumentation.http.1.19.0.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\polly\\7.2.4\\polly.7.2.4.nupkg.sha512",
+    "C:\\Users\\anfsusax\\.nuget\\packages\\polly.extensions.http\\3.0.0\\polly.extensions.http.3.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
