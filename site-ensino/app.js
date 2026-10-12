@@ -38,8 +38,8 @@ function initTheme() {
   const toggleBtn = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
 
-  // Recupera preferência salva
-  const savedTheme = localStorage.getItem('app-theme') || 'dark';
+  // Recupera preferência salva (padrão claro / leve)
+  const savedTheme = localStorage.getItem('app-theme') || 'light';
   applyTheme(savedTheme);
 
   toggleBtn.addEventListener('click', () => {
@@ -53,11 +53,13 @@ function initTheme() {
     if (theme === 'dark') {
       document.body.classList.remove('light-theme');
       document.body.classList.add('dark-theme');
-      themeIcon.textContent = '🌙';
+      themeIcon.textContent = '☀️';
+      toggleBtn.setAttribute('title', 'Alternar para Modo Claro');
     } else {
       document.body.classList.remove('dark-theme');
       document.body.classList.add('light-theme');
-      themeIcon.textContent = '☀️';
+      themeIcon.textContent = '🌙';
+      toggleBtn.setAttribute('title', 'Alternar para Modo Escuro');
     }
   }
 }
