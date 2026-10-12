@@ -128,8 +128,8 @@
 
         <div class="hero-stats-grid">
           <div class="stat-card">
-            <span class="stat-number">3</span>
-            <span class="stat-text">APIs Integradas (Order, Inventory, Payment)</span>
+            <span class="stat-number">4</span>
+            <span class="stat-text">APIs Integradas (Gateway YARP, Order, Inventory, Payment)</span>
           </div>
           <div class="stat-card">
             <span class="stat-number">100%</span>
@@ -704,31 +704,59 @@ builder.Services.AddHttpClient("payment-client", client =>
       <section id="modulo-gateway-discovery" class="section-card lesson-module">
         <div class="module-header">
           <div class="module-number">MÓDULO 4</div>
-          <h2>API Gateway & Service Discovery</h2>
-          <p class="module-subtitle">Como organizar a porta de entrada e como os serviços encontram uns aos outros na rede.</p>
+          <h2>API Gateway (Microsoft YARP) & Service Discovery (Docker DNS)</h2>
+          <p class="module-subtitle">Como organizar a porta de entrada única com YARP e como os microsserviços se encontram dinamicamente sem IPs fixos.</p>
         </div>
 
+        <div class="callout callout-info" style="margin-bottom: 1.5rem;">
+          <div class="callout-icon">🚀</div>
+          <div class="callout-body">
+            <strong>Status da Implementação:</strong> Este módulo agora está <strong>100% implementado e ativo no laboratório real!</strong> 
+            Criamos o projeto <code>GatewayApi</code> usando o <strong>Microsoft YARP (Yet Another Reverse Proxy)</strong>, trancamos as portas das APIs internas na rede privada do Docker e configuramos o rastreamento distribuído no Jaeger com o Gateway como nó raiz.
+          </div>
+        </div>
+
+        <!-- Problema & Objetivo -->
         <div class="problem-objective-grid">
           <div class="card-problem">
-            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <div class="badge-tag red">❌ O Problema: "Casa sem Muros" e IPs que Mudam Toda Hora</div>
             <p>
-              Se você tem 20 microsserviços rodando na nuvem, o aplicativo do celular teria que saber 20 URLs e portas diferentes.
-              Além disso, toda vez que um container reinicia no Kubernetes ou Docker, o endereço de IP muda!
+              Imagine que você tem 10 microsserviços rodando na nuvem. Se cada um expuser sua própria porta para a internet:
             </p>
-            <p class="sub-alert">
-              Imagine o app do usuário quebrar porque o container do estoque subiu com o IP <code>172.18.0.5</code> em vez de <code>172.18.0.4</code>!
-            </p>
+            <ul>
+              <li>O aplicativo do cliente no celular precisaria saber 10 endereços e portas diferentes (ex: 5000, 5001, 5002...).</li>
+              <li><strong>Risco grave de segurança:</strong> Qualquer hacker ou usuário mal-intencionado pode chamar diretamente a <code>PaymentApi</code> ou a <code>InventoryApi</code>, pulando validações de login e regras de negócio!</li>
+              <li><strong>O caos do IP dinâmico:</strong> Toda vez que um contêiner reinicia no Docker ou no Kubernetes, ele ganha um IP diferente (ex: <code>172.18.0.5</code> hoje, <code>172.18.0.9</code> amanhã). Se colocássemos IPs fixos no código C#, a aplicação quebraria no primeiro reinício!</li>
+            </ul>
           </div>
 
           <div class="card-objective">
-            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <div class="badge-tag green">🎯 A Solução Arquitetural Sênior</div>
             <p>
-              Resolver isso com duas peças fundamentais:
+              Resolvemos esses problemas dividindo as responsabilidades em duas peças mestras:
             </p>
             <ul>
-              <li><strong>API Gateway (ex: YARP, Ocelot):</strong> Um portão único de entrada (ex: <code>api.meusite.com</code>). O cliente só fala com ele, e ele redireciona internamente.</li>
-              <li><strong>Service Discovery (ex: DNS do Docker / Consul):</strong> Os serviços se chamam pelo nome (ex: <code>http://inventoryapi:8080</code>), e o sistema descobre o IP real automaticamente.</li>
+              <li><strong>1. API Gateway (Microsoft YARP na porta 5000):</strong> Uma portaria única e blindada. O mundo exterior só conhece a porta 5000. Todas as outras APIs internas têm suas portas trancadas dentro de uma rede privada. O Gateway recebe a requisição, gera o trace, e roteia para o serviço certo internamente.</li>
+              <li><strong>2. Service Discovery (DNS interno do Docker):</strong> Os serviços conversam usando nomes lógicos amigáveis (ex: <code>http://inventoryapi:8080</code> e <code>http://paymentapi:8080</code>). O servidor DNS do Docker intercepta o nome e resolve dinamicamente o IP do container em milissegundos!</li>
             </ul>
+          </div>
+        </div>
+
+        <!-- INFOGRÁFICO ILUSTRATIVO DO GATEWAY & DISCOVERY -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: API Gateway + Service Discovery de Batida de Olho</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/api-gateway-discovery-infographic.jpg" alt="Infográfico ilustrativo do API Gateway YARP protegendo microsserviços privados e Service Discovery via Docker DNS" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo a arquitetura num piscar de olhos:</strong>
+            <br>1. <strong>📱 O Cliente Externo (Mobile/Web):</strong> Só conhece uma única porta: <code>http://localhost:5000</code>. Ele nunca fala direto com o banco, estoque ou pagamento.
+            <br>2. <strong>🚪 O API Gateway (Microsoft YARP):</strong> Fica na portaria da fortaleza. Ele valida cabeçalhos, inicia o <code>Trace ID</code> no OpenTelemetry e sabe exatamente para onde direcionar cada rota (ex: <code>/order</code> ➜ <code>orderapi</code>).
+            <br>3. <strong>🛡️ Escudo da Rede Privada Docker:</strong> As portas das APIs internas (5001 e 5002) foram <strong>totalmente removidas do docker-compose</strong>. Ninguém de fora da máquina consegue acessá-las diretamente!
+            <br>4. <strong>🤖 Robô de Service Discovery (Docker DNS):</strong> Quando a <code>OrderApi</code> precisa falar com a <code>InventoryApi</code>, ela não sabe o IP. Ela pergunta para o robô DNS: <em>"Cadê o container inventoryapi?"</em>, e o Docker responde com o IP correto na hora!
           </div>
         </div>
 
@@ -736,89 +764,407 @@ builder.Services.AddHttpClient("payment-client", client =>
         <div class="analogy-box">
           <div class="analogy-header">
             <span class="analogy-emoji">🏢 & 📖</span>
-            <h3>Exemplo do Dia a Dia: Recepção do Prédio & Lista de Contatos do Celular</h3>
+            <h3>Exemplo do Dia a Dia: A Portaria do Condomínio Fechado & A Agenda do Celular</h3>
           </div>
           <div class="analogy-content">
             <div class="dual-analogy-grid">
               <div class="analogy-col">
-                <h4>🏢 API Gateway = Recepção de Prédio Comercial</h4>
+                <h4>🏢 API Gateway = Portaria de Condomínio Fechado</h4>
                 <p>
-                  Quando você vai a um edifício de médicos com 100 salas, você não sobe direto sem passar na recepção.
+                  Imagine um condomínio residencial de luxo com 100 casas. As casas não têm portão aberto direto para a rua movimentada.
                 </p>
+                <p>
+                  Existe uma <strong>guarita única na entrada</strong> com cancela e segurança armada. O entregador do iFood chega na guarita:
+                </p>
+                <ul>
+                  <li>O segurança confere o documento (<strong>Autenticação</strong>).</li>
+                  <li>Anota o horário de entrada no livro (<strong>Logs e Distributed Tracing</strong>).</li>
+                  <li>Diz: <em>"Pode entrar e levar até a casa número 14"</em> (<strong>Roteamento Reverso</strong>).</li>
+                </ul>
                 <p class="analogy-footer-note">
-                  Você fala na portaria: "Vim na consulta com o Dr. Carlos". A recepcionista confere seu crachá (autenticação) e te diz: "Pegue o elevador para o 4º andar, sala 42".
+                  Se alguém tentar pular o muro direto na casa 14 (tentar acessar a porta 5001 de fora), o muro bloqueia!
                 </p>
               </div>
               <div class="analogy-col">
-                <h4>📖 Service Discovery = Agenda de Contatos</h4>
+                <h4>📖 Service Discovery = Agenda de Contatos do WhatsApp</h4>
                 <p>
-                  Você não decora que o número da sua mãe é <code>(11) 98765-4321</code>. Você salva o contato como "Mãe".
+                  Você decora o número de telefone de 8 dígitos de todos os seus amigos? Com certeza não!
                 </p>
+                <p>
+                  No seu celular, você abre a agenda e clica no contato <strong>"Mãe"</strong>:
+                </p>
+                <ul>
+                  <li>Se a sua mãe trocar de operadora ou mudar de número amanhã, você só atualiza a agenda. Você continua clicando em "Mãe".</li>
+                  <li>O telefone consulta a agenda e disca para o número atualizado sem você precisar saber.</li>
+                </ul>
                 <p class="analogy-footer-note">
-                  Se ela trocar de chip amanhã, você só atualiza o número dela na agenda. Ao clicar em "Ligar para Mãe", o celular descobre o número atualizado na hora.
+                  O <strong>Docker DNS</strong> é a agenda de contatos: a <code>OrderApi</code> chama o nome "inventoryapi", e o Docker cuida de achar o IP que mudou!
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Tabela Passo a Passo -->
+        <!-- Seção 1: O que já tínhamos de Service Discovery -->
+        <div class="concept-breakdown-card">
+          <div class="concept-header">
+            <span class="concept-icon">🔍</span>
+            <h3>1. O que JÁ implementamos de Service Discovery no nosso laboratório?</h3>
+          </div>
+          <p>
+            Implementamos o modelo de <strong>DNS-based Service Discovery</strong> — exatamente o mesmo princípio que o <strong>Kubernetes CoreDNS</strong> usa em produção nas maiores empresas do mundo!
+          </p>
+          <p>
+            No nosso <code>docker-compose.yml</code>, repare como a <code>OrderApi</code> chama os outros serviços através de variáveis de ambiente:
+          </p>
+          <div class="code-spotlight mini-code">
+            <pre><code># Variáveis passadas para a OrderApi no docker-compose.yml
+- InventoryApiUrl=http://inventoryapi:8080
+- PaymentApiUrl=http://paymentapi:8080</code></pre>
+          </div>
+          <div class="step-explanation-box">
+            <strong>⚙️ Como funciona na prática:</strong>
+            <br>• A <code>OrderApi</code> não possui <strong>nenhum IP fixo gravado no código C#</strong>.
+            <br>• Quando ela executa <code>await httpClient.GetAsync("http://inventoryapi:8080/inventory")</code>, a placa de rede virtual do Docker intercepta o nome <code>inventoryapi</code>.
+            <br>• O servidor DNS embutido na rede <code>bridge</code> do Docker consulta sua tabela dinâmica interna, descobre que o container <code>inventoryapi</code> recebeu o IP <code>172.18.0.3</code>, e entrega a conexão transparente.
+            <br>• <em>Por que não usamos HashiCorp Consul ou Netflix Eureka aqui?</em> Porque em ambientes conteinerizados modernos (Docker / Kubernetes), o DNS nativo da infraestrutura já resolve 100% da descoberta de serviços sem precisar de servidores extras complexos!
+          </div>
+        </div>
+
+        <!-- Seção 2: Por que o Gateway não estava implementado e o que fizemos agora -->
+        <div class="concept-breakdown-card">
+          <div class="concept-header">
+            <span class="concept-icon">🚪</span>
+            <h3>2. Por que o API Gateway NÃO estava implementado antes e o que fizemos agora?</h3>
+          </div>
+          <p>
+            Na versão inicial do nosso laboratório, as portas dos microsserviços estavam escancaradas no <code>docker-compose.yml</code>:
+          </p>
+          <ul>
+            <li><code>OrderApi</code>: porta 5000 exposta para o seu PC.</li>
+            <li><code>InventoryApi</code>: porta 5001 exposta para o seu PC.</li>
+            <li><code>PaymentApi</code>: porta 5002 exposta para o seu PC.</li>
+          </ul>
+          <p>
+            Isso significava que qualquer pessoa podia acessar <code>http://localhost:5002/payment</code> direto no navegador!
+          </p>
+          <div class="callout callout-success" style="margin-top: 1rem;">
+            <div class="callout-icon">✨</div>
+            <div class="callout-body">
+              <strong>O que implementamos para resolver isso definitivamente:</strong>
+              <br>1. Criamos o microsserviço <strong>GatewayApi</strong> usando a biblioteca oficial da Microsoft <strong>YARP (Yet Another Reverse Proxy)</strong>.
+              <br>2. Configuramos o YARP para ouvir na porta <strong>5000</strong> e rotear internamente: qualquer requisição para <code>/order</code> é encaminhada automaticamente para <code>http://orderapi:8080</code>.
+              <br>3. <strong>Fechamos e deletamos as portas externas</strong> da <code>orderapi</code>, <code>inventoryapi</code> e <code>paymentapi</code> no <code>docker-compose.yml</code>! Elas agora operam 100% isoladas na rede interna do Docker.
+              <br>4. Plugamos o <strong>OpenTelemetry</strong> no Gateway! Agora, quando você abre o <strong>Jaeger</strong>, o <code>gatewayapi</code> aparece orgulhosamente como o <strong>primeiro nó (Root Span)</strong> de toda a cadeia de execução!
+            </div>
+          </div>
+        </div>
+
+        <!-- TABELA ANTES VS DEPOIS -->
         <div class="step-table-wrapper">
           <div class="table-title">
-            <span class="step-num">4️⃣</span>
-            <h4>Ideia Geral (Passo a Passo)</h4>
+            <span class="step-num">🔄</span>
+            <h4>Comparativo Arquitetural: Antes vs Depois da Implementação</h4>
           </div>
           <table class="didactic-table">
             <thead>
               <tr>
-                <th style="width: 10%;">Etapa</th>
-                <th style="width: 45%;">O que acontece</th>
-                <th style="width: 45%;">Por quê?</th>
+                <th style="width: 20%;">Aspecto</th>
+                <th style="width: 40%;">Antes (Sem API Gateway)</th>
+                <th style="width: 40%;">Depois (Com YARP API Gateway)</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>1</strong></td>
-                <td>O app do usuário chama <code>https://api.empresa.com/orders</code>.</td>
-                <td>O usuário só precisa conhecer um único endereço de entrada simples e seguro.</td>
+                <td><strong>Portas Expostas</strong></td>
+                <td><span class="badge-tag red">❌ Inseguro</span> Portas 5000, 5001 e 5002 abertas direto no Windows.</td>
+                <td><span class="badge-tag green">✅ Seguro</span> Apenas a porta 5000 (Gateway). APIs internas sem nenhuma porta pública!</td>
               </tr>
               <tr>
-                <td><strong>2</strong></td>
-                <td>O <strong>API Gateway</strong> intercepta a requisição, valida o token JWT de autenticação e limita a taxa de cliques (Rate Limiting).</td>
-                <td>Protege todos os serviços internos de ataques e evita ter que reprogramar segurança em cada API.</td>
+                <td><strong>Ponto de Entrada</strong></td>
+                <td>O cliente chamava a <code>OrderApi</code> diretamente.</td>
+                <td>O cliente só fala com o <code>GatewayApi</code>, que distribui o tráfego.</td>
               </tr>
               <tr>
-                <td><strong>3</strong></td>
-                <td>O Gateway consulta o <strong>Service Discovery</strong> para saber onde a <code>OrderApi</code> está rodando.</td>
-                <td>Containers em nuvem nascem e morrem a todo instante com IPs dinâmicos.</td>
+                <td><strong>Segurança de Pagamento</strong></td>
+                <td>Qualquer um podia chamar <code>localhost:5002/payment</code> e forjar pagamentos.</td>
+                <td>Se você tentar chamar <code>localhost:5002</code>, a conexão é <strong>recusada imediatamente</strong>!</td>
               </tr>
               <tr>
-                <td><strong>4</strong></td>
-                <td>No nosso laboratório Docker Compose, o <strong>Docker DNS embutido</strong> serviu como Service Discovery: quando a OrderApi chama <code>http://inventoryapi:8080</code>, o Docker resolve o IP interno automaticamente.</td>
-                <td>Evita colocar IPs fixos (hardcoded) no código-fonte.</td>
+                <td><strong>Rastreamento Jaeger</strong></td>
+                <td>O Trace começava na <code>OrderApi</code> (3 serviços no grafo).</td>
+                <td>O Trace começa no <code>gatewayapi</code> (4 serviços encadeados: Gateway ➜ Order ➜ Inventory & Payment).</td>
+              </tr>
+              <tr>
+                <td><strong>Service Discovery</strong></td>
+                <td>Apenas entre <code>OrderApi</code> ➜ <code>Inventory</code>/<code>Payment</code> via Docker DNS.</td>
+                <td>Completo: Gateway descobre <code>OrderApi</code> via DNS, e ela descobre os outros serviços.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Diagrama Mermaid -->
+        <!-- TABELA PASSO A PASSO DIDÁTICA -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">📋</span>
+            <h4>Passo a Passo Completo: Da Requisição do Cliente até a Resposta Final</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 8%;">Etapa</th>
+                <th style="width: 46%;">O que acontece</th>
+                <th style="width: 46%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>O cliente (navegador, app ou k6) faz uma requisição HTTP <code>POST http://localhost:5000/order</code>.</td>
+                <td>O cliente só conhece um único ponto de contato público centralizado (o API Gateway).</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>O <strong>GatewayApi (YARP)</strong> recebe a chamada. O OpenTelemetry gera um novo <code>TraceId</code> raiz e inicia o primeiro cronômetro (Span raiz).</td>
+                <td>Permite medir o tempo total percebido pelo usuário final no Jaeger e rastrear a requisição de ponta a ponta.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>O YARP consulta sua tabela de rotas no <code>appsettings.json</code>, identifica que <code>/order</code> pertence ao cluster <code>order-cluster</code> e reencaminha a requisição para <code>http://orderapi:8080</code>.</td>
+                <td>O proxy reverso encaminha o tráfego de forma assíncrona com altíssima performance e sem travar threads.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>O YARP injeta o cabeçalho padrão <code>traceparent</code> no HttpClient antes de enviar para a <code>OrderApi</code>.</td>
+                <td>Garante que a <code>OrderApi</code> continue o mesmo trace sem perder o histórico do Gateway.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td>A <code>OrderApi</code> recebe o pedido e precisa checar estoque. Ela chama <code>http://inventoryapi:8080/inventory</code>.</td>
+                <td>A OrderApi não tem nenhum IP fixo; ela usa o nome lógico definido no Service Discovery.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td>O <strong>Docker DNS embutido</strong> intercepta a chamada para <code>inventoryapi</code>, consulta sua tabela interna e entrega o IP privado do container.</td>
+                <td>Isso é o Service Discovery baseado em DNS: se o container reiniciar com outro IP, o Docker atualiza na hora sem quebrar a API!</td>
+              </tr>
+              <tr>
+                <td><strong>7</strong></td>
+                <td>A <code>OrderApi</code> repete o processo chamando <code>http://paymentapi:8080/payment</code>, processa o pedido e responde 200 OK para o Gateway, que devolve o JSON final ao cliente.</td>
+                <td>O ciclo é concluído com sucesso, segurança de 100% e rastreabilidade total no Jaeger!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Diagrama Mermaid Atualizado -->
         <div class="diagram-container">
           <div class="diagram-header">
             <span class="icon">📊</span>
-            <h4>Fluxo de Entrada com API Gateway e Descoberta de Serviços</h4>
+            <h4>Fluxograma Arquitetural da Solução com YARP e Rede Privada</h4>
           </div>
           <div class="mermaid">
-flowchart LR
-    User[📱 Usuário / Mobile] -->|Único IP Público: 443| GW[🚪 API Gateway / YARP]
+flowchart TD
+    Client["📱 Cliente Externo / k6"] -->|POST http://localhost:5000/order| GW["🚪 GatewayApi (YARP na Porta 5000)"]
     
-    subgraph Rede_Interna ["🔒 Rede Interna Privada (Service Discovery)"]
-        GW -->|Roteia /orders| S1[🛒 OrderApi]
-        GW -->|Roteia /inventory| S2[📦 InventoryApi]
-        GW -->|Roteia /payment| S3[💳 PaymentApi]
-        
-        S1 -.->|Chama pelo nome: 'inventoryapi'| S2
-        S1 -.->|Chama pelo nome: 'paymentapi'| S3
+    subgraph Jaeger_Obs ["🔍 Observabilidade Central"]
+        JAEGER["Jaeger Tracing (localhost:16686)"]
     end
+
+    GW -.->|1. Exporta Span Raiz 4317 gRPC| JAEGER
+
+    subgraph Docker_Private_Net ["🔒 Rede Interna Privada do Docker (Sem Portas Públicas)"]
+        DNS["🤖 Docker DNS Server (Service Discovery)"]
+
+        GW -->|2. Roteia internamente via YARP| O["🛒 OrderApi (porta 8080 interna)"]
+        O -.->|Exporta Spans| JAEGER
+
+        O -->|3. Pergunta 'Onde fica inventoryapi?'| DNS
+        DNS -->|Resolve IP dinâmico| O
+        O -->|4. GET /inventory| I["📦 InventoryApi (porta 8080 interna)"]
+        I -.->|Exporta Spans| JAEGER
+
+        O -->|5. Pergunta 'Onde fica paymentapi?'| DNS
+        DNS -->|Resolve IP dinâmico| O
+        O -->|6. GET /payment| P["💳 PaymentApi (porta 8080 interna)"]
+        P -.->|Exporta Spans| JAEGER
+    end
+
+    classDef pub fill:#0078D4,stroke:#005A9E,color:#fff,font-weight:bold;
+    classDef priv fill:#107C41,stroke:#0B5A2F,color:#fff;
+    classDef obs fill:#FFB900,stroke:#D29200,color:#000;
+    class GW pub;
+    class O,I,P priv;
+    class JAEGER obs;
+          </div>
+        </div>
+
+        <!-- CÓDIGO DO YARP E CONFIGURAÇÃO REAL -->
+        <div class="code-spotlight">
+          <div class="code-header">
+            <span>💻 1. Código C# do GatewayApi (GatewayApi/Program.cs)</span>
+            <span class="lang-tag">C# / .NET 10 / YARP</span>
+          </div>
+          <pre><code>using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. Configura o YARP Reverse Proxy lendo a seção "ReverseProxy" do appsettings.json
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+// 2. Instrumenta o OpenTelemetry para o Gateway ser o Root Span no Jaeger
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("gatewayapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation() // Captura requisições de entrada na porta 5000
+            .AddHttpClientInstrumentation() // Propaga o W3C traceparent para a OrderApi
+            .AddOtlpExporter(opt =>
+            {
+                opt.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT") ?? "http://jaeger:4317");
+            });
+    });
+
+var app = builder.Build();
+
+// Endpoint de saúde do próprio Gateway
+app.MapGet("/gateway/health", () => Results.Ok(new 
+{ 
+    status = "Healthy", 
+    gateway = "YARP (Yet Another Reverse Proxy)",
+    role = "Single Entry Point"
+}));
+
+// 3. Ativa o pipeline de roteamento reverso do YARP
+app.MapReverseProxy();
+
+app.Run();</code></pre>
+        </div>
+
+        <div class="code-spotlight" style="margin-top: 1.5rem;">
+          <div class="code-header">
+            <span>⚙️ 2. Mapeamento de Rotas no Gateway (GatewayApi/appsettings.json)</span>
+            <span class="lang-tag">JSON / YARP Config</span>
+          </div>
+          <pre><code>{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Yarp": "Information"
+    }
+  },
+  "ReverseProxy": {
+    "Routes": {
+      "order-route": {
+        "ClusterId": "order-cluster",
+        "Match": {
+          "Path": "/order/{**catch-all}"
+        }
+      },
+      "order-exact-route": {
+        "ClusterId": "order-cluster",
+        "Match": {
+          "Path": "/order"
+        }
+      }
+    },
+    "Clusters": {
+      "order-cluster": {
+        "Destinations": {
+          "order-service": {
+            "Address": "http://orderapi:8080"
+          }
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+
+        <div class="code-spotlight" style="margin-top: 1.5rem;">
+          <div class="code-header">
+            <span>🐳 3. O docker-compose.yml com Portas Blindadas</span>
+            <span class="lang-tag">YAML / Docker Compose</span>
+          </div>
+          <pre><code>services:
+  # O ÚNICO SERVIÇO COM PORTA PÚBLICA EXPOSTA PARA O CLIENTE
+  gatewayapi:
+    build:
+      context: ./GatewayApi
+      dockerfile: Dockerfile
+    container_name: gatewayapi
+    ports:
+      - "5000:8080"  # Apenas a porta 5000 do Gateway fica aberta!
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger
+      - orderapi
+
+  # TODAS AS OUTRAS APIS NÃO TÊM MAIS "ports:" EXPOSTAS NO HOST!
+  orderapi:
+    build:
+      context: ./OrderApi
+      dockerfile: Dockerfile
+    container_name: orderapi
+    # portas 5000:8080 foram REMOVIDAS do host para segurança!
+    environment:
+      - InventoryApiUrl=http://inventoryapi:8080  # Service Discovery via Docker DNS
+      - PaymentApiUrl=http://paymentapi:8080      # Service Discovery via Docker DNS
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+    depends_on:
+      - jaeger
+      - inventoryapi
+      - paymentapi
+
+  inventoryapi:
+    build:
+      context: ./InventoryApi
+      dockerfile: Dockerfile
+    container_name: inventoryapi
+    # porta 5001 REMOVIDA do host!
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+
+  paymentapi:
+    build:
+      context: ./PaymentApi
+      dockerfile: Dockerfile
+    container_name: paymentapi
+    # porta 5002 REMOVIDA do host!
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317</code></pre>
+        </div>
+
+        <!-- GUIA DE TESTE PRÁTICO -->
+        <div class="lab-exercise-box">
+          <div class="lab-title">
+            <span class="lab-badge">🧪 Laboratório Prático</span>
+            <h4>Teste você mesmo no seu computador agora!</h4>
+          </div>
+          <p>
+            Você pode testar exatamente essa segurança no terminal do seu Windows (PowerShell):
+          </p>
+          <div class="command-box">
+            <div class="command-text"># 1. Teste o status de saúde do API Gateway na porta 5000:
+Invoke-RestMethod -Uri "http://localhost:5000/gateway/health"
+
+# 2. Crie um pedido chamando o Gateway (ele roteia para OrderApi, que chama Inventory e Payment):
+Invoke-RestMethod -Uri "http://localhost:5000/order" -Method Post
+
+# 3. TESTE DE BLINDAGEM: Tente chamar a InventoryApi ou PaymentApi diretamente:
+# (O comando vai FALHAR com erro de conexão, provando que a porta está 100% protegida!)
+Invoke-RestMethod -Uri "http://localhost:5001/inventory"
+
+# 4. Abra o Jaeger no navegador e veja a árvore completa começando em "gatewayapi":
+http://localhost:16686</div>
+            <button class="btn-copy">📋 Copiar Comandos</button>
           </div>
         </div>
 
@@ -1571,7 +1917,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
           <span class="step-header-tag">Passo 8: Orquestração Docker</span>
           <h3>7. Criando o docker-compose.yml Completo</h3>
           <p class="tutorial-step-desc">
-            Na raiz da pasta <code>DistributedTracingDemo</code>, crie o arquivo <code>docker-compose.yml</code> unindo os 3 serviços e o Jaeger:
+            Na raiz da pasta <code>DistributedTracingDemo</code>, crie o arquivo <code>docker-compose.yml</code> unindo o Gateway, as APIs e o Jaeger:
           </p>
           <div class="code-spotlight">
             <div class="code-header">
@@ -1589,14 +1935,29 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
     environment:
       - COLLECTOR_OTLP_ENABLED=true
 
+  gatewayapi:
+    build:
+      context: ./GatewayApi
+      dockerfile: Dockerfile
+    container_name: gatewayapi
+    ports:
+      - "5000:8080" # ÚNICA porta pública exposta para o cliente!
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger
+      - orderapi
+
   orderapi:
     build:
       context: ./OrderApi
       dockerfile: Dockerfile
     container_name: orderapi
-    ports:
-      - "5000:8080"
+    # Sem "ports:" expostas - 100% protegida na rede interna do Docker!
     environment:
+      - InventoryApiUrl=http://inventoryapi:8080 # Service Discovery DNS
+      - PaymentApiUrl=http://paymentapi:8080     # Service Discovery DNS
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
     depends_on:
@@ -1609,8 +1970,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
       context: ./InventoryApi
       dockerfile: Dockerfile
     container_name: inventoryapi
-    ports:
-      - "5001:8080"
+    # Sem "ports:" expostas - protegida internamente
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -1622,8 +1982,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
       context: ./PaymentApi
       dockerfile: Dockerfile
     container_name: paymentapi
-    ports:
-      - "5002:8080"
+    # Sem "ports:" expostas - protegida internamente
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -1685,16 +2044,28 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             <div class="trace-info-header">
               <div><strong>Trace ID:</strong> <span id="current-trace-id" class="code-tag">Nenhum gerado</span></div>
               <div><strong>Duração Total:</strong> <span id="current-trace-duration" class="code-tag">0 ms</span></div>
-              <div><strong>Spans:</strong> <span id="current-span-count" class="code-tag">0 / 3</span></div>
+              <div><strong>Spans:</strong> <span id="current-span-count" class="code-tag">0 / 4</span></div>
             </div>
 
             <div class="trace-timeline-interactive">
+              <!-- Span GatewayApi (Root) -->
+              <div class="interactive-span-row" id="row-gateway">
+                <div class="span-label">
+                  <span class="dot-service" style="background-color: var(--ms-purple);"></span>
+                  <span>GatewayApi</span>
+                  <small>POST /order (Porta 5000)</small>
+                </div>
+                <div class="span-bar-container">
+                  <div class="span-bar-animated bar-gateway" id="bar-gateway" style="background: linear-gradient(90deg, var(--ms-purple), #8764B8);">0 ms</div>
+                </div>
+              </div>
+
               <!-- Span OrderApi -->
-              <div class="interactive-span-row" id="row-order">
+              <div class="interactive-span-row indent-1" id="row-order">
                 <div class="span-label">
                   <span class="dot-service order-color"></span>
                   <span>OrderApi</span>
-                  <small>POST /order</small>
+                  <small>Forward YARP (Porta 8080)</small>
                 </div>
                 <div class="span-bar-container">
                   <div class="span-bar-animated bar-order" id="bar-order">0 ms</div>
@@ -1702,11 +2073,11 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
               </div>
 
               <!-- Span InventoryApi -->
-              <div class="interactive-span-row indent-1" id="row-inv">
+              <div class="interactive-span-row indent-2" id="row-inv">
                 <div class="span-label">
                   <span class="dot-service inv-color"></span>
                   <span>InventoryApi</span>
-                  <small>GET /inventory</small>
+                  <small>GET /inventory (DNS)</small>
                 </div>
                 <div class="span-bar-container">
                   <div class="span-bar-animated bar-inv" id="bar-inv">0 ms</div>
@@ -1714,11 +2085,11 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
               </div>
 
               <!-- Span PaymentApi -->
-              <div class="interactive-span-row indent-1" id="row-pay">
+              <div class="interactive-span-row indent-2" id="row-pay">
                 <div class="span-label">
                   <span class="dot-service pay-color"></span>
                   <span>PaymentApi</span>
-                  <small>GET /payment</small>
+                  <small>GET /payment (DNS)</small>
                 </div>
                 <div class="span-bar-container">
                   <div class="span-bar-animated bar-pay" id="bar-pay">0 ms</div>
@@ -1727,7 +2098,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             </div>
 
             <div class="span-tags-detail" id="span-tags-box">
-              <span class="detail-hint">👉 Clique ou passe o mouse sobre o teste para ver como o Jaeger correlacionou as 3 APIs!</span>
+              <span class="detail-hint">👉 Clique em "Disparar Novo Pedido com Trace Completo" para ver o Gateway e as 3 APIs correlacionados em tempo real!</span>
             </div>
           </div>
         </div>
@@ -1824,6 +2195,17 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <button class="opt-btn" data-correct="true">A) Salvar o pedido e o evento na mesma transação atômica do banco, garantindo que nenhuma mensagem se perca.</button>
                 <button class="opt-btn" data-correct="false">B) Fazer o CSS do site carregar mais rápido.</button>
                 <button class="opt-btn" data-correct="false">C) Evitar o uso de contêineres Docker.</button>
+              </div>
+              <div class="feedback-msg"></div>
+            </div>
+
+            <!-- Questão 4 -->
+            <div class="quiz-question-card" data-q="4">
+              <p class="question-text"><strong>4. Por que usamos o YARP como API Gateway e o Docker DNS como Service Discovery?</strong></p>
+              <div class="options-list">
+                <button class="opt-btn" data-correct="false">A) Para deixar as portas 5001 e 5002 expostas diretamente para qualquer usuário na internet.</button>
+                <button class="opt-btn" data-correct="true">B) Para ter uma única entrada segura na porta 5000 (YARP) com rede interna privada, enquanto o Docker DNS resolve os IPs que mudam dinamicamente.</button>
+                <button class="opt-btn" data-correct="false">C) Porque o Docker não permite criar mais de 1 contêiner sem um proxy.</button>
               </div>
               <div class="feedback-msg"></div>
             </div>

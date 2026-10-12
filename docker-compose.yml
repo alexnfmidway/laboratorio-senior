@@ -3,6 +3,7 @@ version: '3.8'
 services:
   jaeger:
     image: jaegertracing/all-in-one:latest
+    container_name: jaeger
     ports:
       - "16686:16686"
       - "4317:4317" # OTLP gRPC
@@ -10,12 +11,26 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
 
+  gatewayapi:
+    build:
+      context: .
+      dockerfile: GatewayApi/Dockerfile
+    container_name: gatewayapi
+    ports:
+      - "5000:8080" # ÚNICA PORTA DE ENTRADA PÚBLICA (API Gateway)!
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger
+      - orderapi
+
   orderapi:
     build:
       context: .
       dockerfile: OrderApi/Dockerfile
-    ports:
-      - "5000:8080"
+    container_name: orderapi
+    # Portas fechadas para o exterior - apenas rede privada interna!
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -30,8 +45,8 @@ services:
     build:
       context: .
       dockerfile: InventoryApi/Dockerfile
-    ports:
-      - "5001:8080"
+    container_name: inventoryapi
+    # Portas fechadas para o exterior - apenas rede privada interna!
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -42,8 +57,8 @@ services:
     build:
       context: .
       dockerfile: PaymentApi/Dockerfile
-    ports:
-      - "5002:8080"
+    container_name: paymentapi
+    # Portas fechadas para o exterior - apenas rede privada interna!
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc

@@ -1294,7 +1294,8 @@ body.dark-theme .bar-track {
   gap: 1rem;
 }
 
-.interactive-span-row.indent-1 { padding-left: 2rem; }
+.interactive-span-row.indent-1 { padding-left: 1.5rem; }
+.interactive-span-row.indent-2 { padding-left: 3rem; }
 
 .span-label {
   display: flex;
@@ -1316,6 +1317,7 @@ body.dark-theme .bar-track {
   border-radius: 50%;
   margin-right: 4px;
 }
+.gateway-color { background-color: var(--ms-purple); }
 .order-color { background-color: var(--service-order); }
 .inv-color { background-color: var(--service-inv); }
 .pay-color { background-color: var(--service-pay); }
@@ -1349,6 +1351,7 @@ body.dark-theme .span-bar-container {
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.bar-gateway { background: linear-gradient(90deg, #6264A7, #8764B8); }
 .bar-order { background: linear-gradient(90deg, #0078D4, #00A4EF); }
 .bar-inv { background: linear-gradient(90deg, #107C41, #7FBA00); }
 .bar-pay { background: linear-gradient(90deg, #D29200, #FFB900); color: #1B1A19; }

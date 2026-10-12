@@ -136,6 +136,7 @@ function initJaegerSimulator() {
   const spanCountEl = document.getElementById('current-span-count');
   const tagsBox = document.getElementById('span-tags-box');
 
+  const barGateway = document.getElementById('bar-gateway');
   const barOrder = document.getElementById('bar-order');
   const barInv = document.getElementById('bar-inv');
   const barPay = document.getElementById('bar-pay');
@@ -148,62 +149,79 @@ function initJaegerSimulator() {
     btnRun.disabled = true;
 
     // Reseta visual
+    if (barGateway) {
+      barGateway.style.width = '0%';
+      barGateway.textContent = 'Iniciando Gateway...';
+    }
     barOrder.style.width = '0%';
     barInv.style.width = '0%';
     barPay.style.width = '0%';
-    barOrder.textContent = 'Iniciando...';
+    barOrder.textContent = 'Aguardando proxy...';
     barInv.textContent = '0 ms';
     barPay.textContent = '0 ms';
 
-    // Gera Trace ID no padrão W3C hex
+    // Gera Trace ID no padrão W3C hex (32 caracteres)
     const traceId = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
     traceIdEl.textContent = traceId;
-    traceStatus.textContent = '🚀 Chamando OrderApi...';
-    spanCountEl.textContent = '1 / 3';
+    traceStatus.textContent = '🚪 GatewayApi (porta 5000) recebeu o pedido e gerou o Trace raiz...';
+    spanCountEl.textContent = '1 / 4';
 
-    // Etapa 1: Inicia OrderApi
-    barOrder.style.width = '100%';
-    barOrder.textContent = 'Executando OrderApi...';
+    // Etapa 1: Inicia GatewayApi (YARP na porta 5000)
+    if (barGateway) {
+      barGateway.style.width = '100%';
+      barGateway.textContent = 'GatewayApi (YARP Proxy)';
+    }
 
-    // Etapa 2: OrderApi chama InventoryApi (espera ~98ms)
+    // Etapa 2: YARP roteia para OrderApi na rede interna (porta 8080)
     setTimeout(() => {
-      traceStatus.textContent = '📦 Consultando estoque na InventoryApi (~98ms)...';
-      spanCountEl.textContent = '2 / 3';
-      barInv.style.width = '38%';
-      barInv.style.left = '4%';
-      barInv.textContent = '98.4 ms (Estoque)';
+      traceStatus.textContent = '🛒 YARP reencaminhou para OrderApi:8080 (rede privada)...';
+      spanCountEl.textContent = '2 / 4';
+      barOrder.style.width = '96%';
+      barOrder.style.left = '2%';
+      barOrder.textContent = 'Executando OrderApi...';
 
-      // Etapa 3: OrderApi chama PaymentApi (espera ~151ms)
+      // Etapa 3: OrderApi descobre e chama InventoryApi via Docker DNS
       setTimeout(() => {
-        traceStatus.textContent = '💳 Cobrando cartão na PaymentApi (~151ms)...';
-        spanCountEl.textContent = '3 / 3';
-        barPay.style.width = '56%';
-        barPay.style.left = '43%';
-        barPay.textContent = '151.2 ms (Pagamento)';
+        traceStatus.textContent = '📦 Docker DNS resolveu "inventoryapi" ➜ Estoque verificado (~98ms)...';
+        spanCountEl.textContent = '3 / 4';
+        barInv.style.width = '37%';
+        barInv.style.left = '6%';
+        barInv.textContent = '98.4 ms (Estoque)';
 
-        // Etapa 4: Finaliza trace completo
+        // Etapa 4: OrderApi descobre e chama PaymentApi via Docker DNS
         setTimeout(() => {
-          durationEl.textContent = '254.6 ms';
-          barOrder.textContent = '254.6 ms (Total Raiz)';
-          traceStatus.textContent = '✅ Trace completo gerado com sucesso!';
-          btnRun.disabled = false;
-          isRunning = false;
+          traceStatus.textContent = '💳 Docker DNS resolveu "paymentapi" ➜ Cartão cobrado (~151ms)...';
+          spanCountEl.textContent = '4 / 4';
+          barPay.style.width = '55%';
+          barPay.style.left = '43%';
+          barPay.textContent = '151.2 ms (Pagamento)';
 
-          tagsBox.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-              <div><strong>🔍 Detalhes do Trace Correlacionado:</strong></div>
-              <div>• <code>traceparent: 00-${traceId}-01</code> (injetado via W3C nos headers HTTP).</div>
-              <div>• <strong>Span 1 (Raiz):</strong> OrderApi (254.6ms) | Status: <code>200 OK</code></div>
-              <div>• <strong>Span 2 (Filho):</strong> InventoryApi (98.4ms) | Tag: <code>stock.status=available</code></div>
-              <div>• <strong>Span 3 (Filho):</strong> PaymentApi (151.2ms) | Tag: <code>payment.gateway=approved</code></div>
-              <div style="color: var(--accent-emerald); font-weight: 600; margin-top: 0.2rem;">
-                🎯 Conclusão do Jaeger: 59% do tempo total da compra foi gasto na PaymentApi!
+          // Etapa 5: Finaliza trace completo com sucesso
+          setTimeout(() => {
+            durationEl.textContent = '258.4 ms';
+            if (barGateway) barGateway.textContent = '258.4 ms (Gateway Raiz - Porta 5000)';
+            barOrder.textContent = '254.6 ms (OrderApi interna)';
+            traceStatus.textContent = '✅ Trace distribuído completo correlacionado no Jaeger!';
+            btnRun.disabled = false;
+            isRunning = false;
+
+            tagsBox.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div><strong>🔍 Detalhes da Cadeia Distribuída Completa (4 Microsserviços):</strong></div>
+                <div>• <code>traceparent: 00-${traceId}-01</code> (propagado automaticamente pelo YARP e HttpClient).</div>
+                <div>• <strong>Span 1 (Raiz):</strong> GatewayApi (258.4ms) | <code>http.method=POST /order</code> | Porta: <code>5000</code></div>
+                <div>• <strong>Span 2 (Filho):</strong> OrderApi (254.6ms) | <code>http.target=orderapi:8080</code> (privado)</div>
+                <div>• <strong>Span 3 (Neto):</strong> InventoryApi (98.4ms) | Descoberto via: <code>Docker DNS</code></div>
+                <div>• <strong>Span 4 (Neto):</strong> PaymentApi (151.2ms) | Descoberto via: <code>Docker DNS</code></div>
+                <div style="color: var(--ms-green-dark); font-weight: 600; margin-top: 0.2rem;">
+                  🎯 Conclusão: O cliente só conversou com o Gateway na porta 5000, e o Jaeger rastreou os 4 nós perfeitamente!
+                </div>
               </div>
-            </div>
-          `;
+            `;
+          }, 500);
         }, 500);
-      }, 500);
-    }, 400);
+      }, 400);
+    }, 350);
   });
 }
 
