@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escola de Microsserviços para Iniciantes | Do Zero ao Sênior</title>
+  <meta name="description" content="Aprenda Distributed Tracing, Jaeger, OpenTelemetry, Circuit Breaker, API Gateway, Saga e Outbox Pattern com analogias fáceis do dia a dia e passo a passo claro.">
+  
+  <!-- Fontes Modernas -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Mermaid.js para Fluxogramas Ilustrativos -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- Barra de Notificação Superior / Status -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="brand-icon">🚀</span>
+        <div class="brand-text">
+          <span class="brand-title">Escola de Microsserviços</span>
+          <span class="brand-subtitle">Laboratório Didático Sênior</span>
+        </div>
+      </div>
+      
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="module-search" placeholder="Buscar conceito (ex: Jaeger, Polly, Saga, Outbox, k6)..." aria-label="Buscar conceitos">
+      </div>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn-icon" title="Alternar Modo Claro/Escuro" aria-label="Alternar tema">
+          <span id="theme-icon">🌙</span>
+        </button>
+        <a href="#simulador-jaeger" class="btn-lab-quick">⚡ Ver Trace Interativo</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Layout Principal com Barra Lateral e Conteúdo -->
+  <div class="app-layout">
+    <!-- Sidebar de Navegação de Módulos -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>📚 Trilha de Estudos</h3>
+        <p class="progress-label">Seu progresso: <span id="progress-percent">0%</span></p>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#intro" class="nav-item active" data-target="intro">
+          <span class="step-badge">0</span>
+          <span>Visão Geral da Arquitetura</span>
+        </a>
+        <a href="#modulo-tracing" class="nav-item" data-target="modulo-tracing">
+          <span class="step-badge">1</span>
+          <span>Distributed Tracing & Jaeger</span>
+        </a>
+        <a href="#modulo-comunicacao" class="nav-item" data-target="modulo-comunicacao">
+          <span class="step-badge">2</span>
+          <span>Síncrono vs Assíncrono</span>
+        </a>
+        <a href="#modulo-circuit-breaker" class="nav-item" data-target="modulo-circuit-breaker">
+          <span class="step-badge">3</span>
+          <span>Circuit Breaker com Polly</span>
+        </a>
+        <a href="#modulo-gateway-discovery" class="nav-item" data-target="modulo-gateway-discovery">
+          <span class="step-badge">4</span>
+          <span>API Gateway & Service Discovery</span>
+        </a>
+        <a href="#modulo-saga" class="nav-item" data-target="modulo-saga">
+          <span class="step-badge">5</span>
+          <span>Saga Pattern (Transações)</span>
+        </a>
+        <a href="#modulo-outbox" class="nav-item" data-target="modulo-outbox">
+          <span class="step-badge">6</span>
+          <span>Outbox Pattern (Consistência)</span>
+        </a>
+        <a href="#modulo-k6" class="nav-item" data-target="modulo-k6">
+          <span class="step-badge">7</span>
+          <span>Testes de Carga com k6</span>
+        </a>
+        <a href="#modulo-tutorial" class="nav-item" data-target="modulo-tutorial">
+          <span class="step-badge">🛠️</span>
+          <span>Tutorial: Criando Tudo do Zero</span>
+        </a>
+        <a href="#simuladores" class="nav-item" data-target="simuladores">
+          <span class="step-badge">🎮</span>
+          <span>Laboratório Interativo</span>
+        </a>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="mini-card-info">
+          <span class="dot-online"></span>
+          <span>Baseado no laboratório real .NET 10 + Jaeger + Docker</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Área Principal de Conteúdo -->
+    <main class="content-area">
+      
+      <!-- HERO SECTION -->
+      <section id="intro" class="section-card hero-section">
+        <div class="hero-badge">🎓 Didática Passo a Passo com Exemplos do Cotidiano</div>
+        <h1 class="hero-title">Aprenda Arquitetura de Microsserviços de Forma Simples</h1>
+        <p class="hero-desc">
+          Chega de termos complicados sem explicação! Aqui você vai entender exatamente 
+          <strong>o que fizemos no nosso laboratório prático</strong> (.NET 10, Jaeger, OpenTelemetry, Polly, Docker e k6) 
+          usando problemas claros, analogias do dia a dia, tabelas passo a passo e simuladores visuais.
+        </p>
+
+        <div class="hero-stats-grid">
+          <div class="stat-card">
+            <span class="stat-number">3</span>
+            <span class="stat-text">APIs Integradas (Order, Inventory, Payment)</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">100%</span>
+            <span class="stat-text">Rastreabilidade ponta a ponta com Jaeger</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">~254ms</span>
+            <span class="stat-text">Tempo total medido do pedido no trace</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">7</span>
+            <span class="stat-text">Padrões de Engenharia Sênior explicados</span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <strong>Como este site funciona:</strong> Cada módulo segue rigorosamente a didática recomendada para iniciantes:
+            <code>Problema ➜ Objetivo ➜ Exemplo do Dia a Dia ➜ Passo a Passo Detalhado ➜ Fluxograma ➜ O que fizemos no código</code>.
+          </div>
+        </div>
+      </section>
+
+      <!-- MÓDULO 1: DISTRIBUTED TRACING & JAEGER -->
+      <section id="modulo-tracing" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 1</div>
+          <h2>Distributed Tracing & Jaeger (OpenTelemetry)</h2>
+          <p class="module-subtitle">Como descobrir exatamente em qual serviço o sistema demorou ou falhou.</p>
+        </div>
+
+        <!-- Problema & Objetivo -->
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>
+              Imagine que um cliente clica em "Finalizar Compra" e a tela fica carregando por 10 segundos até dar erro.
+              Em um sistema de microsserviços, a chamada passou por 4 ou 5 APIs diferentes (Pedidos, Estoque, Pagamento, Frete).
+              <strong>Como você descobre quem demorou ou onde quebrou?</strong>
+            </p>
+            <p class="sub-alert">
+              Sem Distributed Tracing, você teria que abrir os logs de 5 servidores diferentes, procurando linhas de texto perdidas no meio de milhões de clientes simultâneos!
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Colocar uma <strong>"etiqueta única"</strong> (chamada <code>Trace ID</code>) logo na primeira requisição do cliente.
+              Conforme a requisição viaja de um serviço para o outro, essa mesma etiqueta é repassada no cabeçalho HTTP.
+            </p>
+            <p class="sub-alert">
+              No final, ferramentas como o <strong>Jaeger</strong> mostram uma linha do tempo gráfica perfeita dizendo: <em>"O Pedido levou 254ms no total: 98ms foram no Estoque e 151ms foram no Pagamento"</em>.
+            </p>
+          </div>
+        </div>
+
+        <!-- INFOGRÁFICO ILUSTRATIVO DO TRACING -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: O que é Distributed Tracing de Batida de Olho</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/tracing-infographic.jpg" alt="Infográfico explicativo de Distributed Tracing com Order, Inventory, Payment, Trace ID e Jaeger" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>1. <strong>O Carrinho (Order Service):</strong> O cliente clica em comprar. O sistema carimba uma etiqueta digital <code>Trace ID: #9842</code>.
+            <br>2. <strong>As Caixas no Galpão (Inventory Service):</strong> A requisição vai até o estoque com a mesma etiqueta. O cronômetro mede <strong>98ms</strong>.
+            <br>3. <strong>A Maquininha de Cartão (Payment Service):</strong> A requisição passa pelo cartão mantendo a mesma etiqueta. O cronômetro mede <strong>151ms</strong>.
+            <br>4. <strong>A Lupa do Jaeger:</strong> O Jaeger junta todos os cronômetros e mostra na barra colorida: o pedido levou <strong>254ms</strong> no total, e o pagamento foi o maior responsável pelo tempo gasto!
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">📦</span>
+            <h3>Exemplo do Dia a Dia: O Código de Rastreamento dos Correios</h3>
+          </div>
+          <div class="analogy-content">
+            <p>
+              Quando você compra um tênis na internet, a loja te dá um código único de rastreio: <code>BR123456789SP</code>.
+            </p>
+            <ul>
+              <li>Você <strong>não precisa</strong> ligar para o galpão de Curitiba, depois ligar para a transportadora de São Paulo, depois para o entregador da moto.</li>
+              <li>Você simplesmente digita esse código no app e vê a linha do tempo completa:
+                <div class="timeline-mini">
+                  <span>🏪 Pedido postado (08:00)</span> ➜ 
+                  <span>🏭 Triagem no CD Cajamar (12:00)</span> ➜ 
+                  <span>🛵 Saiu para entrega (16:00)</span> ➜ 
+                  <span>🏠 Entregue (16:45)</span>
+                </div>
+              </li>
+              <li><strong>Distributed Tracing é exatamente isso:</strong> O <code>Trace ID</code> é o código de rastreamento da encomenda, e cada parada (etapa) é um <code>Span</code>!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabela Passo a Passo -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">1️⃣</span>
+            <h4>Ideia Geral (Passo a Passo)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Etapa</th>
+                <th style="width: 45%;">O que acontece</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>O usuário faz uma requisição HTTP para a <code>OrderApi</code> (ex: <code>POST /order</code>).</td>
+                <td>É a porta de entrada onde a intenção de compra começa.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>O OpenTelemetry gera automaticamente um identificador único (<code>Trace ID</code>: ex: <code>4bf92f3577b34da6a3ce929d0e0e4736</code>).</td>
+                <td>Ele garante que todas as etapas futuras tenham o mesmo identificador de rastreio pai.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>A <code>OrderApi</code> chama a <code>InventoryApi</code> enviando esse <code>Trace ID</code> no cabeçalho <code>traceparent</code> (padrão W3C).</td>
+                <td>Para que a segunda API saiba que não é uma chamada solta, e sim parte daquele mesmo pedido.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>A <code>InventoryApi</code> mede seu próprio tempo de execução (~98ms) e cria um <code>Span</code> filho.</td>
+                <td>Registra com precisão quanto tempo o estoque demorou para checar os itens.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td>A <code>OrderApi</code> em seguida chama a <code>PaymentApi</code> com o mesmo <code>Trace ID</code>, que cria outro <code>Span</code> filho (~151ms).</td>
+                <td>Registra o tempo que a cobrança no cartão levou para aprovar.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td>Todas as APIs enviam seus dados em segundo plano via OTLP (gRPC porta 4317) para o servidor do <strong>Jaeger</strong>.</td>
+                <td>Para centralizar os dados sem deixar a requisição do usuário mais lenta.</td>
+              </tr>
+              <tr>
+                <td><strong>7</strong></td>
+                <td>O desenvolvedor abre o <strong>Jaeger UI</strong> (porta 16686) e vê a linha do tempo com gráfico de barras colorido.</td>
+                <td>Permite enxergar gargalos de performance e erros em segundos, com precisão cirúrgica.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Fluxograma Mermaid -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Fluxograma Ilustrativo: Como a Informação Navega no Tracing</h4>
+          </div>
+          <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Cliente as 👤 Cliente / App
+    participant Order as 🛒 OrderApi
+    participant Inv as 📦 InventoryApi
+    participant Pay as 💳 PaymentApi
+    participant Jaeger as 🔍 Jaeger Collector
+
+    Cliente->>Order: POST /order (Início do Pedido)
+    Note over Order: Gera Trace ID: 4bf92f...<br/>Cria Span Raiz (Order)
+    
+    Order->>Inv: GET /inventory (Header: traceparent=4bf92f...)
+    Note over Inv: Processa estoque (~98ms)<br/>Cria Span Filho (Inventory)
+    Inv-->>Order: 200 OK (Estoque Confirmado)
+    Inv--)Jaeger: Envia Span via OTLP gRPC (4317)
+    
+    Order->>Pay: GET /payment (Header: traceparent=4bf92f...)
+    Note over Pay: Processa cartão (~151ms)<br/>Cria Span Filho (Payment)
+    Pay-->>Order: 200 OK (Pagamento Aprovado)
+    Pay--)Jaeger: Envia Span via OTLP gRPC (4317)
+    
+    Order-->>Cliente: 200 OK { status: "Order Processed" }
+    Order--)Jaeger: Envia Span Raiz via OTLP gRPC (4317)
+    
+    Note over Jaeger: Monta árvore visual completa<br/>Tempo Total: ~254ms
+          </div>
+        </div>
+
+        <!-- O Que Fizemos no Código -->
+        <div class="code-spotlight">
+          <div class="code-header">
+            <span>💻 O que escrevemos no código .NET 10 (Program.cs)</span>
+            <span class="lang-tag">C# / OpenTelemetry</span>
+          </div>
+          <pre><code>// 1. Configuração do OpenTelemetry com Tracing automático
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService("orderapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation() // Captura requisições que chegam
+            .AddHttpClientInstrumentation() // Captura chamadas feitas para Inventory e Payment
+            .AddOtlpExporter(options =>
+            {
+                // Envia para o Jaeger na porta 4317 usando protocolo gRPC
+                options.Endpoint = new Uri("http://jaeger:4317");
+            });
+    });</code></pre>
+          <div class="code-explanation">
+            <strong>Explicando as 3 linhas chave:</strong>
+            <ul>
+              <li><code>AddAspNetCoreInstrumentation()</code>: Sempre que alguém chama a OrderApi, ela liga o cronômetro automaticamente.</li>
+              <li><code>AddHttpClientInstrumentation()</code>: Quando a OrderApi usa <code>HttpClient</code> para chamar o Estoque ou Pagamento, ela injeta o <code>Trace ID</code> no cabeçalho sem você precisar fazer nada na mão!</li>
+              <li><code>AddOtlpExporter()</code>: Envia os pacotes de telemetria diretamente para o container do Jaeger.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Demonstração Visual Baseada no Laboratório Real -->
+        <div class="live-preview-box">
+          <div class="preview-header">
+            <h4>👁️ Visualização Real do Trace que Testamos no Jaeger</h4>
+            <span class="badge-tag green">Verificado no Docker Compose</span>
+          </div>
+          <div class="jaeger-mockup">
+            <div class="jaeger-bar-row">
+              <div class="service-name">
+                <span class="color-dot order"></span>
+                <strong>orderapi</strong>: GET /order
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill order-fill" style="width: 100%;">254 ms (Span Raiz)</div>
+              </div>
+            </div>
+
+            <div class="jaeger-bar-row indent-1">
+              <div class="service-name">
+                <span class="color-dot order"></span>
+                <span>orderapi</span>: client GET inventory
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill client-inv" style="left: 2%; width: 40%;">101 ms</div>
+              </div>
+            </div>
+
+            <div class="jaeger-bar-row indent-2">
+              <div class="service-name">
+                <span class="color-dot inv"></span>
+                <strong>inventoryapi</strong>: server GET /inventory
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill inv-fill" style="left: 3%; width: 38%;">98.4 ms (Delay de verificação)</div>
+              </div>
+            </div>
+
+            <div class="jaeger-bar-row indent-1">
+              <div class="service-name">
+                <span class="color-dot order"></span>
+                <span>orderapi</span>: client GET payment
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill client-pay" style="left: 42%; width: 57%;">153 ms</div>
+              </div>
+            </div>
+
+            <div class="jaeger-bar-row indent-2">
+              <div class="service-name">
+                <span class="color-dot pay"></span>
+                <strong>paymentapi</strong>: server GET /payment
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill pay-fill" style="left: 43%; width: 55%;">151.2 ms (Processamento do cartão)</div>
+              </div>
+            </div>
+          </div>
+          <p class="mockup-caption">
+            💡 <em>Olhando essa barra, qualquer estagiário ou diretor sabe responder: "Onde o sistema gasta mais tempo?" Resposta: Na PaymentApi (151ms)!</em>
+          </p>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 2: SÍNCRONO VS ASSÍNCRONO -->
+      <section id="modulo-comunicacao" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 2</div>
+          <h2>Comunicação: Síncrona (HTTP/gRPC) vs Assíncrona (Mensageria)</h2>
+          <p class="module-subtitle">Quando você deve esperar a resposta na hora e quando deve apenas mandar uma mensagem e seguir em frente.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>
+              Se a cada clique do usuário sua API precisa chamar:
+              1. Estoque (espera 100ms) + 2. Pagamento (espera 150ms) + 3. Nota Fiscal (espera 500ms) + 4. Disparo de E-mail (espera 800ms) + 5. Notificação Push no celular (espera 400ms)...
+            </p>
+            <p class="sub-alert">
+              O tempo total passa de 2 segundos! E o pior: se o servidor de e-mail estiver fora do ar, <strong>a compra inteira falha</strong> mesmo que o cartão já tenha sido cobrado!
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Dividir a comunicação em duas categorias inteligentes:
+            </p>
+            <ul>
+              <li><strong>Síncrona:</strong> Usar apenas para o que o usuário <em>precisa saber imediatamente</em> para continuar (ex: saldo suficiente no cartão).</li>
+              <li><strong>Assíncrona:</strong> Usar filas (RabbitMQ, Kafka, SQS) para tudo que pode acontecer nos próximos segundos sem travar a tela (ex: gerar nota fiscal, enviar e-mail de obrigado).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- INFOGRÁFICO ILUSTRATIVO SÍNCRONO VS ASSÍNCRONO -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: Síncrono (Travamento) vs Assíncrono (Desacoplado)</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/sync-async-infographic.jpg" alt="Infográfico comparativo de comunicação síncrona bloqueante versus assíncrona desacoplada com filas" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• <strong>Lado Esquerdo (Síncrono / HTTP):</strong> O usuário Alex fica preso olhando para a ampulheta. Cada serviço (User ➜ Order ➜ Payment ➜ Inventory) precisa responder em fila indiana. Tempo total de espera: <strong>2000ms travados</strong>! Se um falhar, a compra inteira cai.
+            <br>• <strong>Lado Direito (Assíncrono / Mensageria):</strong> O usuário clica em "Comprar" e recebe confirmação verde em apenas <strong>50ms</strong>! A mensagem cai na esteira (RabbitMQ / Kafka) e robôs trabalhadores cuidam da separação e envio em segundo plano.
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">📞 vs 💬</span>
+            <h3>Exemplo do Dia a Dia: Ligação Telefônica vs Mensagem no WhatsApp</h3>
+          </div>
+          <div class="analogy-content">
+            <div class="dual-analogy-grid">
+              <div class="analogy-col">
+                <h4>📞 Síncrono = Ligação Telefônica</h4>
+                <p>
+                  Você liga para alguém. Você fala "Alô", e precisa que a pessoa esteja com o telefone no ouvido respondendo "Alô" naquele exato instante.
+                </p>
+                <p class="analogy-footer-note">
+                  Se a pessoa não atender ou o sinal cair, a conversa não acontece e você fica esperando no mudo.
+                </p>
+              </div>
+              <div class="analogy-col">
+                <h4>💬 Assíncrono = Mensagem no WhatsApp</h4>
+                <p>
+                  Você envia: "Segue o comprovante de pagamento". Você <strong>não fica olhando para a tela</strong> esperando a pessoa ler.
+                </p>
+                <p class="analogy-footer-note">
+                  Você guarda o celular no bolso e vai almoçar. Quando a pessoa estiver disponível, ela lê a mensagem e processa o que tiver que processar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela Passo a Passo -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">2️⃣</span>
+            <h4>Comparativo Passo a Passo: Quando Usar Cada Uma</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">Tipo</th>
+                <th style="width: 35%;">Como Funciona</th>
+                <th style="width: 25%;">Vantagens</th>
+                <th style="width: 25%;">Quando Usar?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge-type sync">Síncrono (HTTP / gRPC)</span></td>
+                <td>O serviço A chama o serviço B e <strong>fica travado esperando</strong> a resposta antes de prosseguir.</td>
+                <td>Simples de entender; resposta imediata para o usuário.</td>
+                <td>Consultas em tempo real (ex: checar login, validar senha, consultar saldo).</td>
+              </tr>
+              <tr>
+                <td><span class="badge-type async">Assíncrono (Mensageria / Eventos)</span></td>
+                <td>O serviço A publica uma mensagem em uma fila (RabbitMQ/Kafka) e <strong>continua sua vida imediatamente</strong>.</td>
+                <td>Altíssimo desempenho; se o serviço de destino cair, a mensagem fica guardada na fila e não se perde.</td>
+                <td>Processamento de pedidos, envio de e-mails, emissão de nota fiscal, geração de relatórios.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Fluxograma Mermaid -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Fluxograma: Comparando o Bloqueio Síncrono vs Desacoplamento Assíncrono</h4>
+          </div>
+          <div class="mermaid">
+flowchart TD
+    subgraph Sincrono ["🔴 Modelo Síncrono (Bloqueante)"]
+        A1[Cliente] -->|1. Faz Pedido| B1[OrderApi]
+        B1 -->|2. Bloqueia e Espera| C1[PaymentApi]
+        C1 -->|3. Bloqueia e Espera| D1[EmailService]
+        D1 -.->|4. Responde 800ms| C1
+        C1 -.->|5. Responde 150ms| B1
+        B1 -.->|6. Responde 1000ms| A1
+    end
+
+    subgraph Assincrono ["🟢 Modelo Híbrido Recomendado (Sênior)"]
+        A2[Cliente] -->|1. Faz Pedido| B2[OrderApi]
+        B2 -->|2. Valida Imediato HTTP| C2[PaymentApi]
+        C2 -.->|3. Cartão OK 150ms| B2
+        B2 -->|4. Publica Evento em 5ms| Q[(Fila RabbitMQ)]
+        B2 -.->|5. Responde Pedido Criado 160ms!| A2
+        Q -.->|6. Consome quando puder| D2[EmailService]
+        Q -.->|7. Consome quando puder| E2[FiscalService]
+    end
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 3: CIRCUIT BREAKER COM POLLY -->
+      <section id="modulo-circuit-breaker" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 3</div>
+          <h2>Circuit Breaker (Disjuntor) com Polly</h2>
+          <p class="module-subtitle">Como evitar que a queda de um serviço derrube o sistema inteiro em cascata.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: Efeito Dominó</div>
+            <p>
+              Imagine que a <code>PaymentApi</code> caiu ou começou a demorar 30 segundos para responder.
+              Se 500 pessoas tentarem comprar na mesma hora, a <code>OrderApi</code> vai abrir 500 conexões HTTP simultâneas que ficam travadas esperando.
+            </p>
+            <p class="sub-alert">
+              A memória e o pool de conexões da <code>OrderApi</code> se esgotam. Resultado: <strong>a OrderApi também cai</strong>, derrubando o login, o carrinho e tudo mais. Uma falha pequena vira uma catástrofe global!
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Instalar um <strong>"disjuntor inteligente"</strong> (usando a biblioteca Polly no .NET).
+            </p>
+            <p class="sub-alert">
+              Se a <code>PaymentApi</code> falhar 3 vezes seguidas, o disjuntor "desarma" (<strong>Open</strong>). As próximas chamadas nem saem da máquina: elas falham instantaneamente em 0 milissegundos com uma mensagem amigável, poupando recursos até o serviço se recuperar.
+            </p>
+          </div>
+        </div>
+
+        <!-- INFOGRÁFICO ILUSTRATIVO DO CIRCUIT BREAKER -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: Os 3 Estados do Disjuntor (Circuit Breaker)</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/circuit-breaker-infographic.jpg" alt="Infográfico explicativo dos 3 estados do Circuit Breaker: Closed, Open e Half-Open" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• <strong>1. CLOSED STATE (Luz Verde):</strong> O sistema está saudável. O tráfego elétrico flui livremente do Serviço A para o Serviço B.
+            <br>• <strong>2. OPEN STATE (Chave Vermelha Desarmada):</strong> O Serviço B começou a falhar ou pegar fogo. O disjuntor desarma na hora e coloca um <strong>escudo de proteção</strong>, bloqueando chamadas em 0ms para não queimar o cliente!
+            <br>• <strong>3. HALF-OPEN STATE (Luz Amarela de Teste):</strong> Após um tempo de descanso (cooldown), o disjuntor deixa passar <strong>um único pulso cauteloso</strong>. Se o serviço responder bem, a chave volta para o verde; se falhar, volta para o vermelho!
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">⚡</span>
+            <h3>Exemplo do Dia a Dia: O Disjuntor da Caixa de Luz da Sua Casa</h3>
+          </div>
+          <div class="analogy-content">
+            <p>
+              Na parede da sua casa tem uma caixinha com vários disjuntores.
+            </p>
+            <ul>
+              <li>Se você ligar o chuveiro, a air fryer e o ferro de passar na mesma tomada e houver uma sobrecarga elétrica, o disjuntor faz <em>"CLACK!"</em> e desliga a energia daquele cômodo na hora.</li>
+              <li><strong>Por que ele faz isso?</strong> Para impedir que os fios dentro da parede esquentem até pegar fogo e queimar a casa inteira!</li>
+              <li>Em software, o <strong>Circuit Breaker</strong> faz exatamente isso: ele "desarma" a conexão com o serviço doente para não deixar o servidor inteiro queimar por falta de memória!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabela dos 3 Estados -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">3️⃣</span>
+            <h4>Os 3 Estados do Circuit Breaker (Passo a Passo)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">Estado</th>
+                <th style="width: 40%;">O que acontece</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong class="state-closed">🟢 FECHADO (Closed)</strong></td>
+                <td>Tudo está funcionando normalmente. As requisições passam livremente.</td>
+                <td>O serviço de destino está saudável e respondendo dentro do tempo esperado.</td>
+              </tr>
+              <tr>
+                <td><strong class="state-open">🔴 ABERTO (Open)</strong></td>
+                <td>O disjuntor detectou muitas falhas (ex: 3 consecutivas). <strong>Nenhuma requisição passa!</strong> Elas falham de imediato sem sequer tentar chamar a rede.</td>
+                <td>Para não estressar o serviço que já está caído e evitar que a sua própria API fique com conexões presas na memória.</td>
+              </tr>
+              <tr>
+                <td><strong class="state-half">🟡 MEIO-ABERTO (Half-Open)</strong></td>
+                <td>Depois de um tempo de espera (ex: 30 segundos), o disjuntor deixa passar <strong>apenas uma requisição de teste</strong>.</td>
+                <td>Para conferir se o serviço já voltou à vida. Se essa requisição tiver sucesso, o disjuntor volta para 🟢 FECHADO. Se falhar, ele volta para 🔴 ABERTO por mais 30s.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Fluxograma Mermaid dos Estados -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Máquina de Estados do Circuit Breaker</h4>
+          </div>
+          <div class="mermaid">
+stateDiagram-v2
+    [*] --> Fechado
+    
+    Fechado --> Aberto: 3 falhas consecutivas (Erros 500 / Timeouts)
+    note right of Fechado: 🟢 Requisições passam normal
+    
+    Aberto --> MeioAberto: Após tempo de espera (ex: 30 segundos)
+    note right of Aberto: 🔴 Bloqueio total instantâneo (0ms)
+    
+    MeioAberto --> Fechado: Requisição de teste teve SUCESSO!
+    MeioAberto --> Aberto: Requisição de teste FALHOU de novo!
+    note right of MeioAberto: 🟡 Testa se o serviço se recuperou
+          </div>
+        </div>
+
+        <!-- Código .NET Polly -->
+        <div class="code-spotlight">
+          <div class="code-header">
+            <span>💻 Como configuramos no .NET com Polly</span>
+            <span class="lang-tag">C# / Polly</span>
+          </div>
+          <pre><code>// Adiciona política de Circuit Breaker ao HttpClient do Pedido
+builder.Services.AddHttpClient("payment-client", client =>
+{
+    client.BaseAddress = new Uri("http://paymentapi:8080");
+})
+.AddTransientHttpErrorPolicy(policy =>
+    policy.CircuitBreakerAsync(
+        handledEventsAllowedBeforeBreaking: 3,       // Se falhar 3 vezes seguidas...
+        durationOfBreak: TimeSpan.FromSeconds(30),   // ...fica ABERTO por 30 segundos
+        onBreak: (outcome, timespan) => Console.WriteLine("⚠️ Disjuntor DESARMOU! Bloqueando chamadas."),
+        onReset: () => Console.WriteLine("✅ Disjuntor FECHOU! Serviço voltou ao normal.")
+    )
+);</code></pre>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 4: API GATEWAY & SERVICE DISCOVERY -->
+      <section id="modulo-gateway-discovery" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 4</div>
+          <h2>API Gateway & Service Discovery</h2>
+          <p class="module-subtitle">Como organizar a porta de entrada e como os serviços encontram uns aos outros na rede.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>
+              Se você tem 20 microsserviços rodando na nuvem, o aplicativo do celular teria que saber 20 URLs e portas diferentes.
+              Além disso, toda vez que um container reinicia no Kubernetes ou Docker, o endereço de IP muda!
+            </p>
+            <p class="sub-alert">
+              Imagine o app do usuário quebrar porque o container do estoque subiu com o IP <code>172.18.0.5</code> em vez de <code>172.18.0.4</code>!
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Resolver isso com duas peças fundamentais:
+            </p>
+            <ul>
+              <li><strong>API Gateway (ex: YARP, Ocelot):</strong> Um portão único de entrada (ex: <code>api.meusite.com</code>). O cliente só fala com ele, e ele redireciona internamente.</li>
+              <li><strong>Service Discovery (ex: DNS do Docker / Consul):</strong> Os serviços se chamam pelo nome (ex: <code>http://inventoryapi:8080</code>), e o sistema descobre o IP real automaticamente.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">🏢 & 📖</span>
+            <h3>Exemplo do Dia a Dia: Recepção do Prédio & Lista de Contatos do Celular</h3>
+          </div>
+          <div class="analogy-content">
+            <div class="dual-analogy-grid">
+              <div class="analogy-col">
+                <h4>🏢 API Gateway = Recepção de Prédio Comercial</h4>
+                <p>
+                  Quando você vai a um edifício de médicos com 100 salas, você não sobe direto sem passar na recepção.
+                </p>
+                <p class="analogy-footer-note">
+                  Você fala na portaria: "Vim na consulta com o Dr. Carlos". A recepcionista confere seu crachá (autenticação) e te diz: "Pegue o elevador para o 4º andar, sala 42".
+                </p>
+              </div>
+              <div class="analogy-col">
+                <h4>📖 Service Discovery = Agenda de Contatos</h4>
+                <p>
+                  Você não decora que o número da sua mãe é <code>(11) 98765-4321</code>. Você salva o contato como "Mãe".
+                </p>
+                <p class="analogy-footer-note">
+                  Se ela trocar de chip amanhã, você só atualiza o número dela na agenda. Ao clicar em "Ligar para Mãe", o celular descobre o número atualizado na hora.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela Passo a Passo -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">4️⃣</span>
+            <h4>Ideia Geral (Passo a Passo)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Etapa</th>
+                <th style="width: 45%;">O que acontece</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>O app do usuário chama <code>https://api.empresa.com/orders</code>.</td>
+                <td>O usuário só precisa conhecer um único endereço de entrada simples e seguro.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>O <strong>API Gateway</strong> intercepta a requisição, valida o token JWT de autenticação e limita a taxa de cliques (Rate Limiting).</td>
+                <td>Protege todos os serviços internos de ataques e evita ter que reprogramar segurança em cada API.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>O Gateway consulta o <strong>Service Discovery</strong> para saber onde a <code>OrderApi</code> está rodando.</td>
+                <td>Containers em nuvem nascem e morrem a todo instante com IPs dinâmicos.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>No nosso laboratório Docker Compose, o <strong>Docker DNS embutido</strong> serviu como Service Discovery: quando a OrderApi chama <code>http://inventoryapi:8080</code>, o Docker resolve o IP interno automaticamente.</td>
+                <td>Evita colocar IPs fixos (hardcoded) no código-fonte.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Diagrama Mermaid -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Fluxo de Entrada com API Gateway e Descoberta de Serviços</h4>
+          </div>
+          <div class="mermaid">
+flowchart LR
+    User[📱 Usuário / Mobile] -->|Único IP Público: 443| GW[🚪 API Gateway / YARP]
+    
+    subgraph Rede_Interna ["🔒 Rede Interna Privada (Service Discovery)"]
+        GW -->|Roteia /orders| S1[🛒 OrderApi]
+        GW -->|Roteia /inventory| S2[📦 InventoryApi]
+        GW -->|Roteia /payment| S3[💳 PaymentApi]
+        
+        S1 -.->|Chama pelo nome: 'inventoryapi'| S2
+        S1 -.->|Chama pelo nome: 'paymentapi'| S3
+    end
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 5: SAGA PATTERN -->
+      <section id="modulo-saga" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 5</div>
+          <h2>Saga Pattern: Transações Distribuídas</h2>
+          <p class="module-subtitle">Como cancelar e desfazer etapas anteriores quando algo dá errado no meio do caminho.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: Sem BEGIN TRANSACTION</div>
+            <p>
+              No banco de dados tradicional, se algo der errado você faz <code>ROLLBACK</code> e tudo volta como era antes.
+              Mas em microsserviços, <strong>cada serviço tem o seu próprio banco de dados isolado</strong>!
+            </p>
+            <p class="sub-alert">
+              Se você reservou o item no banco do Estoque, mas 5 segundos depois o banco do Cartão de Crédito recusou a compra, o item ficou preso no estoque para sempre! Como devolver o estoque se os bancos são separados?
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Implementar uma <strong>Saga</strong>: uma sequência de transações locais onde cada passo tem uma <strong>Ação de Compensação</strong> correspondente (o "desfazer").
+            </p>
+            <p class="sub-alert">
+              Se a etapa 3 falhar, a Saga dispara os comandos reversos da etapa 2 e da etapa 1: <em>"Devolver os 2 sapatos ao estoque"</em> e <em>"Marcar o pedido como cancelado"</em>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">✈️ 🏨 🚗</span>
+            <h3>Exemplo do Dia a Dia: Reserva de Pacote de Viagem (Passagem + Hotel + Carro)</h3>
+          </div>
+          <div class="analogy-content">
+            <p>
+              Você entra numa agência para comprar um pacote para Paris com 3 itens:
+            </p>
+            <ol>
+              <li>A agência reserva a <strong>Passagem Aérea</strong> (Sucesso!).</li>
+              <li>A agência reserva o <strong>Hotel</strong> (Sucesso!).</li>
+              <li>A agência tenta reservar o <strong>Aluguel do Carro</strong> (Ops! Não tem mais carros disponíveis!).</li>
+            </ol>
+            <p class="analogy-footer-note">
+              A agência não vai te mandar para Paris sem hotel e sem carro deixando tudo pela metade. Ela imediatamente executa a <strong>compensação</strong>: cancela a reserva do hotel e cancela a passagem aérea, estornando seu dinheiro integralmente.
+            </p>
+          </div>
+        </div>
+
+        <!-- Orquestração vs Coreografia -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">5️⃣</span>
+            <h4>As Duas Formas de Fazer Saga: Orquestração vs Coreografia</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 20%;">Modelo</th>
+                <th style="width: 35%;">Como Funciona</th>
+                <th style="width: 25%;">Analogia</th>
+                <th style="width: 20%;">Vantagem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Orquestração (Recomendada)</strong></td>
+                <td>Existe um serviço central (o "Orquestrador") que manda mensagens dizendo exatamente quem deve agir a cada passo.</td>
+                <td>🎼 <strong>O Maestro da Orquestra:</strong> Ele aponta para o violino, depois para o piano. Se o piano errar, o maestro manda o violino parar.</td>
+                <td>Fácil de monitorar e entender onde o fluxo parou.</td>
+              </tr>
+              <tr>
+                <td><strong>Coreografia</strong></td>
+                <td>Não tem chefe central. Cada serviço faz seu trabalho e joga um evento na fila; o próximo serviço escuta e reage por conta própria.</td>
+                <td>💃 <strong>Dança em Roda:</strong> Cada dançarino só faz o seu passo ao ver o movimento do parceiro do lado.</td>
+                <td>Totalmente descentralizado, ótimo para fluxos muito simples com 2 etapas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Diagrama Mermaid da Saga com Compensação -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Fluxograma: Saga Orquestrada com Falha e Compensação</h4>
+          </div>
+          <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant O as 🎯 Orquestrador de Pedidos
+    participant E as 📦 Microsserviço de Estoque
+    participant P as 💳 Microsserviço de Pagamento
+
+    Note over O: Inicia Saga: Novo Pedido
+    O->>E: 1. Reservar 1 Notebook
+    E-->>O: 2. Sucesso: Estoque Reservado!
+    
+    O->>P: 3. Cobrar R$ 4.000 no Cartão
+    P-->>O: 4. FALHA: Cartão Recusado / Limite Excedido!
+    
+    Note over O,E: Dispara AÇÃO DE COMPENSAÇÃO (Desfazer)
+    O->>E: 5. Compensar: Devolver Notebook ao Estoque!
+    E-->>O: 6. Estoque Restaurado com Sucesso!
+    
+    Note over O: Saga finalizada com consistência garantida.
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 6: OUTBOX PATTERN -->
+      <section id="modulo-outbox" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 6</div>
+          <h2>Outbox Pattern: Consistência Banco + Mensageria</h2>
+          <p class="module-subtitle">Como ter certeza absoluta de que um evento foi publicado se o banco salvou o dado.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema da Falha Dupla</div>
+            <p>
+              Imagine o seguinte código comum:
+              <br><code>1. _banco.Pedidos.Add(pedido); await _banco.SaveChangesAsync();</code>
+              <br><code>2. await _rabbitMq.PublicarMensagemAsync("PedidoCriado");</code>
+            </p>
+            <p class="sub-alert">
+              E se o banco salvar, mas o servidor reiniciar <strong>exatamente entre a linha 1 e a linha 2</strong>? O pedido foi salvo, mas a mensagem nunca foi enviada! O estoque nunca vai saber que precisa separar o produto!
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Criar uma tabela chamada <code>Outbox</code> <strong>dentro do mesmo banco de dados</strong> do serviço.
+            </p>
+            <p class="sub-alert">
+              Quando salvamos o pedido, gravamos a mensagem na tabela <code>Outbox</code> dentro da MESMA transação atômica do banco. Depois, um processo em segundo plano (Background Worker) lê a tabela e despacha as mensagens com segurança garantida.
+            </p>
+          </div>
+        </div>
+
+        <!-- INFOGRÁFICO ILUSTRATIVO DO OUTBOX PATTERN -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: O Cofre Atômico do Outbox Pattern</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/outbox-infographic.jpg" alt="Infográfico explicativo do Outbox Pattern com transação atômica em cofre, tabela de pedidos e mensagens e robô despachante" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• <strong>O Cofre com Cadeado Dourado (Transação Atômica):</strong> A API grava no banco de dados duas tabelas juntas: <code>1. Tabela de Pedidos</code> e <code>2. Tabela de Mensagens Outbox</code>. Ou ambas são salvas juntas, ou nenhuma é salva! Zero chance de inconsistência.
+            <br>• <strong>O Robô Trabalhador em Background:</strong> Um worker dedicado lê as mensagens pendentes na tabela Outbox e as despacha em segurança para a esteira (RabbitMQ/Kafka).
+            <br>• <strong>Selo de Entrega Garantida:</strong> Somente após o RabbitMQ confirmar o recebimento, o robô atualiza o registro como "Processado".
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">📬</span>
+            <h3>Exemplo do Dia a Dia: A Caixa de Saída de Cartas do Escritório</h3>
+          </div>
+          <div class="analogy-content">
+            <p>
+              Em um escritório de advocacia, quando o advogado termina de escrever uma notificação importante:
+            </p>
+            <ul>
+              <li>Ele <strong>não larga a mesa de trabalho</strong> e sai correndo até a agência dos Correios no meio da chuva.</li>
+              <li>Ele simplesmente coloca a carta na bandeja etiquetada: <strong>"Caixa de Saída" (Outbox)</strong> em cima da mesa.</li>
+              <li>Duas vezes por dia, o carteiro do prédio passa na mesa, recolhe todas as cartas que estão na caixa de saída e leva para os Correios despachar.</li>
+              <li>Se chover forte de manhã, as cartas não se perdem: continuam guardadas com segurança na bandeja até o carteiro passar!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabela Passo a Passo -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">6️⃣</span>
+            <h4>Ideia Geral (Passo a Passo)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Etapa</th>
+                <th style="width: 45%;">O que acontece</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>A <code>OrderApi</code> abre uma transação no banco de dados (<code>BEGIN TRANSACTION</code>).</td>
+                <td>Garante que ou tudo é salvo junto, ou nada é salvo (Atomicidade).</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>Salva a linha na tabela <code>Pedidos</code>.</td>
+                <td>Grava os dados comerciais do cliente.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>Salva uma linha na tabela <code>OutboxMessages</code> com o conteúdo do evento (ex: <code>{ Evento: 'PedidoCriado', Status: 'Pendente' }</code>).</td>
+                <td>Como está na mesma transação, se a luz acabar aqui, o pedido e a mensagem são desfeitos juntos. Não há risco de inconsistência!</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>Faz o <code>COMMIT TRANSACTION</code>.</td>
+                <td>Os dois registros agora estão gravados em disco de forma definitiva.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td>Um <code>BackgroundService</code> (Worker) roda a cada 2 segundos, lê as mensagens pendentes da tabela <code>OutboxMessages</code> e publica no RabbitMQ/Kafka.</td>
+                <td>Desacopla a publicação de rede da requisição do cliente.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td>Assim que o RabbitMQ confirma o recebimento, o Worker marca a linha como <code>Status: 'Processado'</code>.</td>
+                <td>Garante que a mensagem não seja enviada novamente.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Fluxograma Mermaid do Outbox -->
+        <div class="diagram-container">
+          <div class="diagram-header">
+            <span class="icon">📊</span>
+            <h4>Fluxograma Ilustrativo: Como o Outbox Pattern Garante a Entrega</h4>
+          </div>
+          <div class="mermaid">
+flowchart TD
+    API[🛒 OrderApi] -->|1. Transação Única DB| DB[(Banco de Dados PostgreSQL / SQL Server)]
+    
+    subgraph Transacao_Atomica ["🔒 Mesma Transação SQL"]
+        DB -->|2. Insere| T1[Tabela: Pedidos]
+        DB -->|3. Insere| T2[Tabela: OutboxMessages]
+    end
+
+    Worker[⚙️ Worker / Polling em 2s] -->|4. Busca Mensagens Pendentes| T2
+    Worker -->|5. Publica Evento| Broker[(🐰 Fila RabbitMQ / Kafka)]
+    Broker -.->|6. Confirmação ACK| Worker
+    Worker -->|7. Atualiza: Processado=true| T2
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 7: TESTES DE CARGA COM K6 -->
+      <section id="modulo-k6" class="section-card lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 7</div>
+          <h2>Testes de Carga com k6 & Diagnóstico de Gargalos</h2>
+          <p class="module-subtitle">Como testar se o sistema aguenta o tráfego real e encontrar os pontos lentos usando o Jaeger.</p>
+        </div>
+
+        <div class="problem-objective-grid">
+          <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>
+              No computador do desenvolvedor, testar 1 clique na API parece super rápido ("na minha máquina funciona!").
+              Mas no dia do lançamento, 5.000 clientes entram ao mesmo tempo.
+            </p>
+            <p class="sub-alert">
+              Sem testes de carga prévios, o servidor atinge 100% de CPU, o banco entra em deadlock e a loja perde milhões de reais em vendas ao vivo.
+            </p>
+          </div>
+
+          <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>
+              Usar a ferramenta <strong>k6</strong> para simular dezenas de usuários virtuais simultâneos (VUs) fazendo pedidos sem parar por 30 segundos.
+            </p>
+            <p class="sub-alert">
+              Ao mesmo tempo em que a carga bate nas APIs, abrimos o <strong>Jaeger</strong> para cruzar os dados e responder cientificamente: <em>"Quantas requisições por segundo aguentamos?"</em> e <em>"Qual serviço foi o vilão da lentidão?"</em>
+            </p>
+          </div>
+        </div>
+
+        <!-- Exemplo do Dia a Dia -->
+        <div class="analogy-box">
+          <div class="analogy-header">
+            <span class="analogy-emoji">🌉</span>
+            <h3>Exemplo do Dia a Dia: O Teste de Carga de Peso em uma Nova Ponte</h3>
+          </div>
+          <div class="analogy-content">
+            <p>
+              Antes de liberar uma grande ponte estaiada para a população:
+            </p>
+            <ul>
+              <li>Os engenheiros colocam <strong>40 caminhões pesados carregados de areia</strong> parados em cima da pista ao mesmo tempo.</li>
+              <li>Sensores medem o quanto os cabos de aço esticam e se há vibrações perigosas.</li>
+              <li><strong>O k6 é o caminhão de areia do software:</strong> Ele força o limite máximo do sistema em um ambiente controlado para garantir que a ponte não caia na hora do rush!</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tabela Passo a Passo -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">7️⃣</span>
+            <h4>Ideia Geral (Passo a Passo do que Executamos no Lab)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Etapa</th>
+                <th style="width: 45%;">O que acontece</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>Criamos o script <code>loadtest.js</code> configurando 10 Usuários Virtuais (<code>vus: 10</code>) rodando por 30 segundos (<code>duration: '30s'</code>).</td>
+                <td>Define o volume de estresse que queremos aplicar de forma padronizada.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>Executamos o k6 apontando para <code>http://host.docker.internal:5000/order</code>.</td>
+                <td>Gera um bombardeio de requisições reais contra a nossa <code>OrderApi</code> no Docker.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>A <code>OrderApi</code> processa cada pedido chamando a <code>InventoryApi</code> (100ms) e a <code>PaymentApi</code> (150ms).</td>
+                <td>Simula o comportamento de microsserviços reais com regras de negócio e processamento de banco.</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>O OpenTelemetry gera milhares de Spans e envia via gRPC para o Jaeger.</td>
+                <td>Alimenta o Jaeger com métricas reais de cada uma das centenas de requisições feitas.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td>O k6 encerra e imprime na tela: <code>http_req_duration: p(95)=270ms</code> e <code>http_req_failed: 0.00%</code>.</td>
+                <td>Mede se o sistema manteve estabilidade e zero erros sob estresse contínuo.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td>Abrimos o Jaeger na porta 16686 e inspecionamos os traces gerados durante a carga.</td>
+                <td>Confirma visualmente a saúde do fluxo e prova que o gargalo foi o tempo simulado do pagamento (150ms).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Código do k6 -->
+        <div class="code-spotlight">
+          <div class="code-header">
+            <span>💻 O Script loadtest.js que rodamos no laboratório</span>
+            <span class="lang-tag">JavaScript / k6</span>
+          </div>
+          <pre><code>import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  vus: 10,          // 10 usuários simultâneos
+  duration: '30s',  // Durante 30 segundos ininterruptos
+};
+
+export default function () {
+  // Dispara POST para o endpoint que orquestra os 3 microsserviços
+  const res = http.post('http://host.docker.internal:5000/order');
+  
+  // Valida se o status retornado foi 200 OK
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+  });
+
+  sleep(0.1); // Pequena pausa entre pedidos
+}</code></pre>
+        </div>
+
+      </section>
+
+      <!-- MÓDULO 8: TUTORIAL PRÁTICO - COMO CRIAR TUDO DO ZERO -->
+      <section id="modulo-tutorial" class="section-card tutorial-section lesson-module">
+        <div class="module-header">
+          <div class="module-number">MÓDULO 8 (PRÁTICA REAL)</div>
+          <h2>Tutorial Passo a Passo: Como Criar Tudo do Zero</h2>
+          <p class="module-subtitle">O guia definitivo com todos os comandos de terminal, códigos C# no .NET 10, Dockerfiles e docker-compose.yml que usamos para construir este laboratório.</p>
+        </div>
+
+        <!-- INFOGRÁFICO DE ARQUITETURA E CONSTRUÇÃO -->
+        <div class="infographic-card">
+          <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: O Mapa Completo de Construção do Laboratório</span>
+            <span class="badge-tag green">Tutorial Prático</span>
+          </div>
+          <div class="infographic-frame">
+            <img src="images/hands-on-build-infographic.jpg" alt="Infográfico mostrando o passo a passo de construção do laboratório com .NET 10, Docker, Jaeger e k6" class="infographic-img" loading="lazy">
+          </div>
+          <div class="infographic-caption">
+            <strong>👁️ Entendendo o mapa da construção:</strong>
+            <br>• <strong>Passo 1 (.NET 10 SDK):</strong> Criamos as APIs minimalistas em C# com arquitetura leve e rápida.
+            <br>• <strong>Passo 2 (Docker Containerization):</strong> Empacotamos OrderApi, InventoryApi e PaymentApi em imagens multi-stage isoladas.
+            <br>• <strong>Passo 3 (Jaeger OpenTelemetry):</strong> Conectamos a telemetria ponta a ponta na porta gRPC 4317 do Jaeger.
+            <br>• <strong>Passo 4 (k6 Load Testing):</strong> Simulamos tráfego real com usuários virtuais simultâneos e validamos a resiliência no velocímetro de performance!
+          </div>
+        </div>
+
+        <!-- CHECKLIST INTERATIVO DO ALUNO -->
+        <div class="checklist-card">
+          <div class="checklist-title">
+            <span>✅ Seu Checklist Prático de Construção (Clique para Marcar):</span>
+          </div>
+          <div class="checklist-grid">
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>1. Verificar .NET 10 e Docker instalados</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>2. Criar a pasta e a Solução (.sln)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>3. Criar os projetos Order, Inventory e Payment</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>4. Adicionar pacotes OpenTelemetry e Polly</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>5. Programar a InventoryApi (delay 100ms)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>6. Programar a PaymentApi (delay 150ms)</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>7. Programar a OrderApi com Circuit Breaker</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>8. Criar os Dockerfiles de cada API</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>9. Montar o docker-compose.yml</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>10. Executar docker compose up --build -d</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>11. Rodar o teste de carga com k6</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox">
+              <span>12. Abrir o Jaeger e analisar o trace completo!</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- TABELA PASSO A PASSO GERAL -->
+        <div class="step-table-wrapper">
+          <div class="table-title">
+            <span class="step-num">📋</span>
+            <h4>Roteiro Geral da Construção (Passo a Passo)</h4>
+          </div>
+          <table class="didactic-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Etapa</th>
+                <th style="width: 45%;">O que fazer (Comando / Arquivo)</th>
+                <th style="width: 45%;">Por quê?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1</strong></td>
+                <td>Criar a pasta e a solução com <code>dotnet new sln -n DistributedTracingDemo</code>.</td>
+                <td>Centraliza os 3 projetos em uma única solução para fácil compilação.</td>
+              </tr>
+              <tr>
+                <td><strong>2</strong></td>
+                <td>Criar as 3 APIs com <code>dotnet new web -n OrderApi</code>, <code>InventoryApi</code> e <code>PaymentApi</code>.</td>
+                <td>O template <code>web</code> gera Minimal APIs limpas, sem controllers pesados.</td>
+              </tr>
+              <tr>
+                <td><strong>3</strong></td>
+                <td>Instalar os pacotes do <code>OpenTelemetry</code> e <code>Microsoft.Extensions.Http.Polly</code> via <code>dotnet add package</code>.</td>
+                <td>Habilita o rastreamento automático distribuído e a proteção contra quedas (disjuntor).</td>
+              </tr>
+              <tr>
+                <td><strong>4</strong></td>
+                <td>Escrever o <code>Program.cs</code> de cada microsserviço configurando a porta OTLP 4317.</td>
+                <td>Define os endpoints de negócio e conecta o envio de telemetria ao Jaeger.</td>
+              </tr>
+              <tr>
+                <td><strong>5</strong></td>
+                <td>Criar os <code>Dockerfile</code> multi-stage baseados no .NET 10 SDK e ASP.NET 10.0 runtime.</td>
+                <td>Permite que as APIs rodem em containers leves e idênticos em qualquer máquina.</td>
+              </tr>
+              <tr>
+                <td><strong>6</strong></td>
+                <td>Criar o <code>docker-compose.yml</code> unindo as 3 APIs e o container <code>jaegertracing/all-in-one</code>.</td>
+                <td>Sobe o cluster inteiro e a rede interna de Service Discovery com apenas um comando.</td>
+              </tr>
+              <tr>
+                <td><strong>7</strong></td>
+                <td>Disparar carga com o container <code>grafana/k6</code> e abrir o Jaeger na porta <code>16686</code>.</td>
+                <td>Gera tráfego real e visualiza os spans coloridos confirmando o funcionamento perfeito!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ETAPAS DETALHADAS COM COMANDOS E CÓDIGOS -->
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 1 & 2: Terminal</span>
+          <h3>1. Criando a Estrutura de Pastas e Projetos no Terminal</h3>
+          <p class="tutorial-step-desc">
+            Abra seu terminal (PowerShell ou Bash) na pasta onde deseja criar o projeto e execute:
+          </p>
+          <div class="command-box">
+            <div class="command-text">mkdir DistributedTracingDemo
+cd DistributedTracingDemo
+dotnet new sln -n DistributedTracingDemo
+dotnet new web -n OrderApi
+dotnet new web -n InventoryApi
+dotnet new web -n PaymentApi
+dotnet sln add OrderApi/OrderApi.csproj InventoryApi/InventoryApi.csproj PaymentApi/PaymentApi.csproj</div>
+            <button class="btn-copy">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 3: Pacotes NuGet</span>
+          <h3>2. Instalando as Bibliotecas do OpenTelemetry e Polly</h3>
+          <p class="tutorial-step-desc">
+            Instale os pacotes que ligam o cronômetro automático do tracing e o disjuntor de segurança:
+          </p>
+          <div class="command-box">
+            <div class="command-text"># Na OrderApi (necessita de Tracing + Polly + HttpClient Instrumentation):
+dotnet add OrderApi package OpenTelemetry.Extensions.Hosting
+dotnet add OrderApi package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add OrderApi package OpenTelemetry.Instrumentation.Http
+dotnet add OrderApi package OpenTelemetry.Exporter.OpenTelemetryProtocol
+dotnet add OrderApi package Microsoft.Extensions.Http.Polly
+
+# Na InventoryApi e PaymentApi (necessitam de Tracing para receber e devolver o Trace ID):
+dotnet add InventoryApi package OpenTelemetry.Extensions.Hosting
+dotnet add InventoryApi package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add InventoryApi package OpenTelemetry.Exporter.OpenTelemetryProtocol
+
+dotnet add PaymentApi package OpenTelemetry.Extensions.Hosting
+dotnet add PaymentApi package OpenTelemetry.Instrumentation.AspNetCore
+dotnet add PaymentApi package OpenTelemetry.Exporter.OpenTelemetryProtocol</div>
+            <button class="btn-copy">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 4: Código C#</span>
+          <h3>3. Programando a InventoryApi (InventoryApi/Program.cs)</h3>
+          <p class="tutorial-step-desc">
+            A InventoryApi simula a verificação de estoque com um delay de 100ms e exporta seus dados para o Jaeger:
+          </p>
+          <div class="code-spotlight">
+            <div class="code-header">
+              <span>InventoryApi/Program.cs</span>
+              <button class="btn-copy">📋 Copiar Código</button>
+            </div>
+            <pre><code>using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configura OpenTelemetry Tracing
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("inventoryapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddOtlpExporter(opt => opt.Endpoint = new Uri("http://jaeger:4317"));
+    });
+
+var app = builder.Build();
+
+// Endpoint de Estoque com delay simulado de 100ms
+app.MapGet("/inventory", async () =>
+{
+    await Task.Delay(100);
+    return Results.Ok(new { status = "In Stock", checkedAt = DateTime.UtcNow });
+});
+
+app.Run();</code></pre>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 5: Código C#</span>
+          <h3>4. Programando a PaymentApi (PaymentApi/Program.cs)</h3>
+          <p class="tutorial-step-desc">
+            A PaymentApi simula o processamento do cartão de crédito com um delay de 150ms:
+          </p>
+          <div class="code-spotlight">
+            <div class="code-header">
+              <span>PaymentApi/Program.cs</span>
+              <button class="btn-copy">📋 Copiar Código</button>
+            </div>
+            <pre><code>using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("paymentapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddOtlpExporter(opt => opt.Endpoint = new Uri("http://jaeger:4317"));
+    });
+
+var app = builder.Build();
+
+// Endpoint de Pagamento com delay simulado de 150ms
+app.MapGet("/payment", async () =>
+{
+    await Task.Delay(150);
+    return Results.Ok(new { status = "Payment Approved", transactionId = Guid.NewGuid() });
+});
+
+app.Run();</code></pre>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 6: Orquestração e Resiliência</span>
+          <h3>5. Programando a OrderApi com Polly Circuit Breaker (OrderApi/Program.cs)</h3>
+          <p class="tutorial-step-desc">
+            A OrderApi recebe a compra do cliente, chama Inventory e Payment com rastreamento automático e protege a chamada de pagamento com o Circuit Breaker:
+          </p>
+          <div class="code-spotlight">
+            <div class="code-header">
+              <span>OrderApi/Program.cs</span>
+              <button class="btn-copy">📋 Copiar Código</button>
+            </div>
+            <pre><code>using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Polly;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. Configura OpenTelemetry (Captura requisições recebidas E enviadas via HttpClient)
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("orderapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation() // Injeta o Trace ID no cabeçalho W3C
+            .AddOtlpExporter(opt => opt.Endpoint = new Uri("http://jaeger:4317"));
+    });
+
+// 2. HttpClient para InventoryApi
+builder.Services.AddHttpClient("inventory", client =>
+{
+    client.BaseAddress = new Uri("http://inventoryapi:8080");
+});
+
+// 3. HttpClient para PaymentApi protegido com Circuit Breaker da Polly
+builder.Services.AddHttpClient("payment", client =>
+{
+    client.BaseAddress = new Uri("http://paymentapi:8080");
+})
+.AddTransientHttpErrorPolicy(policy =>
+    policy.CircuitBreakerAsync(
+        handledEventsAllowedBeforeBreaking: 3,       // Desarma se falhar 3x consecutivas
+        durationOfBreak: TimeSpan.FromSeconds(30),   // Permanece aberto por 30s
+        onBreak: (outcome, breakDelay) => Console.WriteLine("⚠️ Disjuntor ABERTO! Bloqueando chamadas."),
+        onReset: () => Console.WriteLine("✅ Disjuntor FECHADO! Pagamento recuperado.")
+    )
+);
+
+var app = builder.Build();
+
+// Endpoint de Criação de Pedido
+app.MapPost("/order", async (IHttpClientFactory clientFactory) =>
+{
+    var invClient = clientFactory.CreateClient("inventory");
+    var payClient = clientFactory.CreateClient("payment");
+
+    // 1. Chama Inventory
+    var invRes = await invClient.GetAsync("/inventory");
+    if (!invRes.IsSuccessStatusCode)
+        return Results.Problem("Estoque indisponível.");
+
+    // 2. Chama Payment
+    var payRes = await payClient.GetAsync("/payment");
+    if (!payRes.IsSuccessStatusCode)
+        return Results.Problem("Falha no pagamento.");
+
+    return Results.Ok(new { status = "Order Completed Successfully!" });
+});
+
+app.Run();</code></pre>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 7: Dockerfiles</span>
+          <h3>6. Criando os Dockerfiles Multi-stage (.NET 10)</h3>
+          <p class="tutorial-step-desc">
+            Crie um arquivo chamado <code>Dockerfile</code> dentro de cada pasta (<code>OrderApi/Dockerfile</code>, <code>InventoryApi/Dockerfile</code>, <code>PaymentApi/Dockerfile</code>):
+          </p>
+          <div class="code-spotlight">
+            <div class="code-header">
+              <span>OrderApi/Dockerfile</span>
+              <button class="btn-copy">📋 Copiar Código</button>
+            </div>
+            <pre><code>FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["OrderApi.csproj", "./"]
+RUN dotnet restore "OrderApi.csproj"
+COPY . .
+RUN dotnet publish "OrderApi.csproj" -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
+          </div>
+          <p class="tutorial-step-desc" style="margin-top: 0.85rem;">
+            <em>(Faça o mesmo para a <code>InventoryApi</code> trocando <code>OrderApi.csproj</code> por <code>InventoryApi.csproj</code>, e para a <code>PaymentApi</code>).</em>
+          </p>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 8: Orquestração Docker</span>
+          <h3>7. Criando o docker-compose.yml Completo</h3>
+          <p class="tutorial-step-desc">
+            Na raiz da pasta <code>DistributedTracingDemo</code>, crie o arquivo <code>docker-compose.yml</code> unindo os 3 serviços e o Jaeger:
+          </p>
+          <div class="code-spotlight">
+            <div class="code-header">
+              <span>docker-compose.yml</span>
+              <button class="btn-copy">📋 Copiar Código</button>
+            </div>
+            <pre><code>services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Interface Web do Jaeger
+      - "4317:4317"   # Entrada OTLP gRPC
+      - "4318:4318"   # Entrada OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  orderapi:
+    build:
+      context: ./OrderApi
+      dockerfile: Dockerfile
+    container_name: orderapi
+    ports:
+      - "5000:8080"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger
+      - inventoryapi
+      - paymentapi
+
+  inventoryapi:
+    build:
+      context: ./InventoryApi
+      dockerfile: Dockerfile
+    container_name: inventoryapi
+    ports:
+      - "5001:8080"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger
+
+  paymentapi:
+    build:
+      context: ./PaymentApi
+      dockerfile: Dockerfile
+    container_name: paymentapi
+    ports:
+      - "5002:8080"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - jaeger</code></pre>
+          </div>
+        </div>
+
+        <div class="tutorial-step-block">
+          <span class="step-header-tag">Passo 9 & 10: Execução e Validação</span>
+          <h3>8. Subindo o Ambiente e Executando o Teste de Carga com k6</h3>
+          <p class="tutorial-step-desc">
+            1. Suba todos os contêineres com um único comando no terminal:
+          </p>
+          <div class="command-box">
+            <div class="command-text">docker compose up --build -d</div>
+            <button class="btn-copy">📋 Copiar</button>
+          </div>
+
+          <p class="tutorial-step-desc">
+            2. Crie o arquivo <code>loadtest.js</code> e execute o k6 simulando 10 usuários virtuais por 30 segundos:
+          </p>
+          <div class="command-box">
+            <div class="command-text">docker run --rm -i -v "${PWD}/loadtest.js:/loadtest.js" grafana/k6 run /loadtest.js</div>
+            <button class="btn-copy">📋 Copiar</button>
+          </div>
+
+          <p class="tutorial-step-desc">
+            3. Abra seu navegador em <strong>http://localhost:16686</strong>, selecione o serviço <code>orderapi</code> e clique em <strong>Find Traces</strong>! Você verá a árvore completa com os 3 serviços e a medição exata do tempo de execução! 🎉
+          </p>
+        </div>
+
+      </section>
+
+      <!-- LABORATÓRIO INTERATIVO: SIMULADORES E JOGOS DIDÁTICOS -->
+      <section id="simuladores" class="section-card interactive-lab-section">
+        <div class="module-header">
+          <div class="module-number">🎮 EXPERIMENTE NA PRÁTICA</div>
+          <h2>Laboratório Interativo & Simuladores</h2>
+          <p class="module-subtitle">Brinque com os conceitos em tempo real para fixar o aprendizado na memória.</p>
+        </div>
+
+        <!-- SIMULADOR 1: JAEGER TRACE EXPLORER -->
+        <div class="simulator-card" id="simulador-jaeger">
+          <div class="sim-header">
+            <span class="sim-badge">Simulador 1</span>
+            <h3>🔍 Simulador Visual de Tracing do Jaeger</h3>
+          </div>
+          <p class="sim-desc">
+            Clique no botão para simular um pedido. Veja o <strong>Trace ID</strong> sendo gerado e os <strong>Spans</strong> crescendo na tela com seus tempos reais!
+          </p>
+
+          <div class="sim-controls">
+            <button id="btn-run-trace" class="btn-primary">▶️ Fazer Pedido de Teste (POST /order)</button>
+            <span id="trace-status" class="trace-status-text">Pronto para disparar</span>
+          </div>
+
+          <div class="interactive-trace-box" id="trace-visual-container">
+            <div class="trace-info-header">
+              <div><strong>Trace ID:</strong> <span id="current-trace-id" class="code-tag">Nenhum gerado</span></div>
+              <div><strong>Duração Total:</strong> <span id="current-trace-duration" class="code-tag">0 ms</span></div>
+              <div><strong>Spans:</strong> <span id="current-span-count" class="code-tag">0 / 3</span></div>
+            </div>
+
+            <div class="trace-timeline-interactive">
+              <!-- Span OrderApi -->
+              <div class="interactive-span-row" id="row-order">
+                <div class="span-label">
+                  <span class="dot-service order-color"></span>
+                  <span>OrderApi</span>
+                  <small>POST /order</small>
+                </div>
+                <div class="span-bar-container">
+                  <div class="span-bar-animated bar-order" id="bar-order">0 ms</div>
+                </div>
+              </div>
+
+              <!-- Span InventoryApi -->
+              <div class="interactive-span-row indent-1" id="row-inv">
+                <div class="span-label">
+                  <span class="dot-service inv-color"></span>
+                  <span>InventoryApi</span>
+                  <small>GET /inventory</small>
+                </div>
+                <div class="span-bar-container">
+                  <div class="span-bar-animated bar-inv" id="bar-inv">0 ms</div>
+                </div>
+              </div>
+
+              <!-- Span PaymentApi -->
+              <div class="interactive-span-row indent-1" id="row-pay">
+                <div class="span-label">
+                  <span class="dot-service pay-color"></span>
+                  <span>PaymentApi</span>
+                  <small>GET /payment</small>
+                </div>
+                <div class="span-bar-container">
+                  <div class="span-bar-animated bar-pay" id="bar-pay">0 ms</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="span-tags-detail" id="span-tags-box">
+              <span class="detail-hint">👉 Clique ou passe o mouse sobre o teste para ver como o Jaeger correlacionou as 3 APIs!</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMULADOR 2: CIRCUIT BREAKER SANDBOX -->
+        <div class="simulator-card" id="simulador-circuit-breaker">
+          <div class="sim-header">
+            <span class="sim-badge">Simulador 2</span>
+            <h3>⚡ Simulador de Circuit Breaker (Polly)</h3>
+          </div>
+          <p class="sim-desc">
+            Veja a máquina de estados funcionar. Marque a opção <em>"Simular Queda da PaymentApi"</em> e envie pedidos repetidos para ver o disjuntor desarmar!
+          </p>
+
+          <div class="cb-dashboard">
+            <div class="cb-state-display">
+              <div class="cb-bulb" id="cb-bulb">🟢</div>
+              <div class="cb-state-info">
+                <span class="cb-state-title">Estado Atual:</span>
+                <span class="cb-state-name" id="cb-state-text">FECHADO (Closed)</span>
+                <span class="cb-state-sub" id="cb-state-desc">Chamadas passam normalmente.</span>
+              </div>
+            </div>
+
+            <div class="cb-metrics">
+              <div class="metric-item">
+                <span class="m-val" id="cb-consecutive-fails">0 / 3</span>
+                <span class="m-lbl">Falhas Consecutivas</span>
+              </div>
+              <div class="metric-item">
+                <span class="m-val" id="cb-total-blocked">0</span>
+                <span class="m-lbl">Chamadas Bloqueadas (0ms)</span>
+              </div>
+              <div class="metric-item">
+                <span class="m-val" id="cb-cooldown">0s</span>
+                <span class="m-lbl">Tempo de Espera Restante</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cb-action-bar">
+            <label class="toggle-control">
+              <input type="checkbox" id="toggle-payment-crash">
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">🚨 Derrubar PaymentApi (Gerar Erro 500)</span>
+            </label>
+
+            <button id="btn-cb-send" class="btn-primary">🛒 Enviar Requisição para OrderApi</button>
+            <button id="btn-cb-reset" class="btn-outline">🔄 Resetar Disjuntor</button>
+          </div>
+
+          <div class="cb-log-window" id="cb-log-list">
+            <div class="log-entry info">Sistema pronto. O disjuntor está FECHADO e aguardando requisições.</div>
+          </div>
+        </div>
+
+        <!-- QUIZ DE FIXAÇÃO -->
+        <div class="simulator-card" id="quiz-section">
+          <div class="sim-header">
+            <span class="sim-badge">Desafio Rápido</span>
+            <h3>🧠 Teste Rápido de Conhecimento (Perguntas de Entrevista Sênior)</h3>
+          </div>
+          <p class="sim-desc">
+            Responda e veja a explicação didática imediata para fixar cada conceito.
+          </p>
+
+          <div class="quiz-container" id="quiz-container">
+            <!-- Questão 1 -->
+            <div class="quiz-question-card" data-q="1">
+              <p class="question-text"><strong>1. Para que serve o Trace ID no OpenTelemetry e Jaeger?</strong></p>
+              <div class="options-list">
+                <button class="opt-btn" data-correct="false">A) Para criptografar o número do cartão de crédito do cliente.</button>
+                <button class="opt-btn" data-correct="true">B) Para amarrar todas as chamadas feitas entre diferentes microsserviços em uma mesma linha do tempo.</button>
+                <button class="opt-btn" data-correct="false">C) Para reiniciar o Docker quando a memória encher.</button>
+              </div>
+              <div class="feedback-msg"></div>
+            </div>
+
+            <!-- Questão 2 -->
+            <div class="quiz-question-card" data-q="2">
+              <p class="question-text"><strong>2. O que o Circuit Breaker faz quando está no estado "ABERTO" (Open)?</strong></p>
+              <div class="options-list">
+                <button class="opt-btn" data-correct="false">A) Ele tenta chamar a API com mais força 100 vezes seguidas.</button>
+                <button class="opt-btn" data-correct="true">B) Ele bloqueia chamadas instantaneamente em 0ms para não travar a aplicação com requisições presas.</button>
+                <button class="opt-btn" data-correct="false">C) Ele apaga os dados do banco de dados.</button>
+              </div>
+              <div class="feedback-msg"></div>
+            </div>
+
+            <!-- Questão 3 -->
+            <div class="quiz-question-card" data-q="3">
+              <p class="question-text"><strong>3. Qual é a principal vantagem do Outbox Pattern?</strong></p>
+              <div class="options-list">
+                <button class="opt-btn" data-correct="true">A) Salvar o pedido e o evento na mesma transação atômica do banco, garantindo que nenhuma mensagem se perca.</button>
+                <button class="opt-btn" data-correct="false">B) Fazer o CSS do site carregar mais rápido.</button>
+                <button class="opt-btn" data-correct="false">C) Evitar o uso de contêineres Docker.</button>
+              </div>
+              <div class="feedback-msg"></div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RODAPÉ -->
+      <footer class="app-footer">
+        <div class="footer-content">
+          <p>🚀 <strong>Laboratório Didático de Microsserviços Sênior</strong></p>
+          <p>Criado com didática passo a passo, analogias simples e arquitetura real .NET 10 + Jaeger + Polly + k6.</p>
+          <p class="footer-copy">© 2026 - Feito para transformar conceitos difíceis em entendimento cristalino.</p>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
