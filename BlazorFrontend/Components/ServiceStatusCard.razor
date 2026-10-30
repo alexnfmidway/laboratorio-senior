@@ -1,0 +1,18 @@
+@* Card de status de saúde de cada microsserviço *@
+
+<div class="service-status-card @(Health?.Online == true ? "online" : "offline")">
+    <div class="status-icon">@Health?.Icone</div>
+    <div class="status-info">
+        <strong>@Health?.Nome</strong>
+        <span class="status-badge @(Health?.Online == true ? "badge-ok" : "badge-err")">
+            @(Health?.Online == true ? "🟢 Online" : "🔴 Offline")
+        </span>
+        <span class="latencia">@Health?.LatenciaMs ms</span>
+    </div>
+    <div class="status-text">@Health?.Status</div>
+</div>
+
+@code {
+    [Parameter] public ServiceHealth? Health { get; set; }
+}
+

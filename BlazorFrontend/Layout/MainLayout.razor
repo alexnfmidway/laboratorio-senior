@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+@inject ProgressService ProgressService
+
+<div class="app-wrapper">
+    <!-- Fita de cores (estética do site original) -->
+    <div class="ms-color-ribbon"></div>
+
+    <!-- Header/Nav -->
+    <header class="top-nav">
+        <div class="nav-container">
+            <a href="/" class="brand">
+                <div class="ms-logo-badge">
+                    <span class="ms-tile ms-red"></span>
+                    <span class="ms-tile ms-green"></span>
+                    <span class="ms-tile ms-blue"></span>
+                    <span class="ms-tile ms-yellow"></span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">Escola de Microsserviços</span>
+                    <span class="brand-subtitle">Microsoft .NET 10 &amp; Azure Architecture</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <a href="/simulador" class="btn-lab-quick">⚡ Simulador ao Vivo</a>
+                <a href="http://localhost:16686" target="_blank" class="btn-jaeger">🔍 Jaeger UI</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout principal -->
+    <div class="app-layout">
+        <NavMenu PercentualProgresso="_percentual" />
+        <main class="content-area">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private int _percentual;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _percentual = await ProgressService.GetPercentualAsync();
+    }
+}

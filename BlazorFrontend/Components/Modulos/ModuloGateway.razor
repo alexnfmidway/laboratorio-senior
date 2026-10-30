@@ -1,0 +1,92 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 4</div>
+        <h2>API Gateway (Microsoft YARP) &amp; Service Discovery (Docker DNS)</h2>
+        <p class="module-subtitle">A portaria única do condomínio e o robô que encontra os endereços dos serviços.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: "Casa sem Muros"</div>
+            <ul>
+                <li>O app do cliente precisaria saber 10 endereços diferentes (5000, 5001, 5002...).</li>
+                <li><strong>Risco grave:</strong> qualquer hacker pode chamar diretamente a PaymentApi!</li>
+                <li><strong>IPs dinâmicos:</strong> cada reinício do container muda o IP — o código quebraria!</li>
+            </ul>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 A Solução Sênior</div>
+            <ul>
+                <li><strong>API Gateway (YARP):</strong> Única porta pública (5000). Todas as outras ficam na rede privada Docker.</li>
+                <li><strong>Service Discovery (Docker DNS):</strong> Serviços se falam por nome (<code>http://inventoryapi:8080</code>), não por IP!</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- INFOGRÁFICO ILUSTRATIVO DO GATEWAY & DISCOVERY -->
+    <div class="infographic-card">
+        <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: API Gateway + Service Discovery de Batida de Olho</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+        </div>
+        <div class="infographic-frame">
+            <img src="images/api-gateway-discovery-infographic.jpg" alt="Infográfico ilustrativo do API Gateway YARP protegendo microsserviços privados e Service Discovery via Docker DNS" class="infographic-img" loading="lazy">
+        </div>
+        <div class="infographic-caption">
+            <strong>👁️ Entendendo a arquitetura num piscar de olhos:</strong>
+            <br>1. <strong>📱 O Cliente Externo (Blazor):</strong> Só conhece uma única porta: <code>http://localhost:5000</code>.
+            <br>2. <strong>🚪 O API Gateway (Microsoft YARP):</strong> Portaria blindada. Valida rotas e inicia o <code>Trace ID</code>.
+            <br>3. <strong>🛡️ Escudo da Rede Privada Docker:</strong> As portas das APIs internas (8080) são fechadas para o exterior.
+            <br>4. <strong>🤖 Robô DNS do Docker:</strong> Quando OrderApi chama <code>inventoryapi</code>, o Docker resolve o IP na hora!
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="🏢 & 📖" Titulo="Portaria do Condomínio + Agenda do Celular">
+        <div class="dual-analogy-grid">
+            <div class="analogy-col">
+                <h4>🏢 API Gateway = Portaria do Condomínio</h4>
+                <p>Um condomínio de 100 casas tem uma guarita única. O entregador não vai direto em cada casa — passa pela portaria primeiro, que valida e direciona.</p>
+            </div>
+            <div class="analogy-col">
+                <h4>📖 Service Discovery = Agenda do Celular</h4>
+                <p>Você liga para "Pizzaria do João" sem saber o número de cor. A agenda resolve o nome para o número. O Docker DNS faz exatamente isso!</p>
+            </div>
+        </div>
+    </AnalogyBox>
+
+    <CodeSnippet Titulo="💻 Configuração do YARP (GatewayApi/appsettings.json)" Linguagem="JSON / YARP" Codigo="@_codigoYarp" />
+
+    <div class="callout callout-info">
+        <div class="callout-icon">🚀</div>
+        <div class="callout-body">
+            <strong>Este módulo está 100% ativo no laboratório!</strong>
+            O GatewayApi é o único container com porta exposta (5000).
+            Esta aplicação Blazor também passa pelo Gateway em cada chamada que faz!
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string _codigoYarp =
+"""
+{
+  "ReverseProxy": {
+    "Routes": {
+      "order-route": {
+        "ClusterId": "order-cluster",
+        "Match": { "Path": "/order/{**catch-all}" }
+      }
+    },
+    "Clusters": {
+      "order-cluster": {
+        "Destinations": {
+          "dest-order": {
+            "Address": "http://orderapi:8080"  // Nome Docker DNS!
+          }
+        }
+      }
+    }
+  }
+}
+""";
+}

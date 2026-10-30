@@ -1,0 +1,28 @@
+@inject IJSRuntime JS
+
+<div class="diagram-container">
+    <div class="diagram-header">
+        <span class="icon">📊</span>
+        <h4>@Titulo</h4>
+    </div>
+    <div @ref="_container" class="mermaid">@Definicao</div>
+</div>
+
+@code {
+    [Parameter] public string Titulo { get; set; } = "Diagrama";
+    [Parameter] public string Definicao { get; set; } = "";
+
+    private ElementReference _container;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("eval", "if(window.mermaid) mermaid.init(undefined, arguments[0])", _container);
+            }
+            catch { /* mermaid pode ainda não estar carregado */ }
+        }
+    }
+}

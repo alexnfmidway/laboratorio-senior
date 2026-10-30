@@ -1,0 +1,18 @@
+@* Caixa de analogia do dia a dia — replica o estilo do site HTML original *@
+
+<div class="analogy-box">
+    <div class="analogy-header">
+        <span class="analogy-emoji">@Emoji</span>
+        <h3>@Titulo</h3>
+    </div>
+    <div class="analogy-content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Emoji { get; set; } = "💡";
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
+

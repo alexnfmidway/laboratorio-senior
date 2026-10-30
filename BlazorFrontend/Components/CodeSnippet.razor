@@ -1,0 +1,20 @@
+@* Bloco de código com destaque visual — replica o code-spotlight do site HTML *@
+
+<div class="code-spotlight">
+    <div class="code-header">
+        <span>@Titulo</span>
+        <span class="lang-tag">@Linguagem</span>
+    </div>
+    <pre><code>@Codigo</code></pre>
+    @if (ChildContent is not null)
+    {
+        <div class="code-explanation">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Titulo { get; set; } = "💻 Código";
+    [Parameter] public string Linguagem { get; set; } = "C#";
+    [Parameter] public string Codigo { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

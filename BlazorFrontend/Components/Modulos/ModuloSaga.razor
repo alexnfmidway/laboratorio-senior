@@ -1,0 +1,56 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 5</div>
+        <h2>Saga Pattern (Transações Distribuídas)</h2>
+        <p class="module-subtitle">Como garantir consistência quando uma operação envolve múltiplos microsserviços.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: Sem Transação Global</div>
+            <p>Em banco relacional, um <code>BEGIN TRANSACTION</code> garante que ou tudo acontece ou nada. Em microsserviços, cada serviço tem seu próprio banco. <strong>Não existe transação global!</strong></p>
+            <p class="sub-alert">O estoque foi reservado, pagamento aprovado, mas a nota fiscal falhou. Como desfazer?</p>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 O Padrão Saga</div>
+            <p>Uma sequência de transações locais. Se uma etapa falhar, executa <strong>transações compensatórias</strong> para desfazer as etapas anteriores.</p>
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="✈️" Titulo="Reserva de Passagem Aérea + Hotel + Carro">
+        <p>Você reserva passagem, hotel e carro para uma viagem. Se o carro não tiver disponível:</p>
+        <ul>
+            <li>A passagem é <strong>cancelada</strong> (transação compensatória).</li>
+            <li>O hotel é <strong>cancelado</strong> (transação compensatória).</li>
+            <li>O Saga garante que você não fica com meia reserva!</li>
+        </ul>
+    </AnalogyBox>
+
+    <div class="step-table-wrapper">
+        <div class="table-title"><h4>Dois Tipos de Saga</h4></div>
+        <table class="didactic-table">
+            <thead><tr><th>Tipo</th><th>Como Funciona</th><th>Quando Usar</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><strong>Choreography</strong></td>
+                    <td>Cada serviço publica eventos e outros reagem. Sem orquestrador central.</td>
+                    <td>Fluxos simples com poucos serviços.</td>
+                </tr>
+                <tr>
+                    <td><strong>Orchestration</strong></td>
+                    <td>Um orquestrador central diz a cada serviço o que fazer e o que compensar.</td>
+                    <td>Fluxos complexos com muitas etapas e lógica de compensação.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout callout-warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+            <strong>Próxima implementação:</strong> O Saga Pattern é o próximo passo natural do laboratório,
+            a ser implementado com MassTransit + RabbitMQ.
+        </div>
+    </div>
+</section>
+

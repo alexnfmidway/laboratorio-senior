@@ -1,0 +1,169 @@
+@page "/simulador"
+@inject GatewayApiService ApiService
+@inject ProgressService ProgressService
+
+<PageTitle>Simulador de Pedidos | Escola de Microsserviços</PageTitle>
+
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">🎮 LABORATÓRIO INTERATIVO</div>
+        <h2>Simulador de Pedido ao Vivo</h2>
+        <p class="module-subtitle">
+            Aqui você dispara um pedido <strong>de verdade</strong> para o laboratório. 
+            O pedido passa pelo <em>GatewayApi → OrderApi → InventoryApi + PaymentApi</em>, 
+            e gera um trace real no Jaeger!
+        </p>
+    </div>
+
+    <!-- Explicação do fluxo -->
+    <div class="callout callout-info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+            <strong>O que acontece quando você clica:</strong>
+            <code>Blazor → POST localhost:5000/order → GatewayApi (YARP) → OrderApi → InventoryApi (100ms) + PaymentApi (150ms) → Jaeger</code>
+        </div>
+    </div>
+
+    <!-- Botão principal -->
+    <div class="simulador-action-area">
+        <button class="btn-simulador @(_carregando ? "loading" : "")"
+                @onclick="FazerPedido"
+                disabled="@_carregando">
+            @if (_carregando)
+            {
+                <span class="spinner">⏳</span>
+                <span>Processando pedido...</span>
+            }
+            else
+            {
+                <span>⚡ Fazer Pedido Agora!</span>
+            }
+        </button>
+
+        <button class="btn-secondary" @onclick="LimparHistorico" disabled="@(_historico.Count == 0)">
+            🗑️ Limpar Histórico
+        </button>
+    </div>
+
+    <!-- Resultado do pedido atual -->
+    @if (_ultimoResultado is not null)
+    {
+        <div class="result-card @(_ultimoResultado.Sucesso ? "result-success" : "result-error")">
+            <div class="result-header">
+                <span class="result-icon">@(_ultimoResultado.Sucesso ? "✅" : "❌")</span>
+                <strong>@(_ultimoResultado.Sucesso ? "Pedido Aprovado!" : "Pedido Falhou")</strong>
+                <span class="result-time">@_ultimoResultado.ElapsedMs ms</span>
+            </div>
+
+            @if (_ultimoResultado.Sucesso)
+            {
+                <div class="result-details">
+                    <p>📦 <strong>Order ID:</strong> <code>@_ultimoResultado.OrderId</code></p>
+                    <p>💬 <strong>Mensagem:</strong> @_ultimoResultado.Message</p>
+                    <p>⏱️ <strong>Tempo (Blazor→Gateway):</strong> @_ultimoResultado.ElapsedMs ms</p>
+                    <p>📊 <strong>Trace registrado no Jaeger!</strong>
+                        <a href="http://localhost:16686" target="_blank" class="btn-jaeger-small">
+                            🔍 Ver Trace
+                        </a>
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="result-details">
+                    <p>💥 <strong>Erro:</strong> @_ultimoResultado.Erro</p>
+                    <p>⏱️ <strong>Tempo de resposta:</strong> @_ultimoResultado.ElapsedMs ms</p>
+                    @if (_ultimoResultado.Erro?.Contains("Circuit Breaker") == true || _ultimoResultado.Erro?.Contains("bloqueada") == true)
+                    {
+                        <div class="callout callout-warning">
+                            <div class="callout-icon">⚡</div>
+                            <div class="callout-body">
+                                O Circuit Breaker está <strong>ABERTO</strong>! 
+                                As chamadas são bloqueadas instantaneamente para proteger o sistema.
+                                <a href="/circuit-breaker-lab">→ Ir para o Lab de Circuit Breaker</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Visualização do trace esperado -->
+    <div class="section-divider">📊 Visualização do Trace (como aparece no Jaeger)</div>
+    <div class="live-preview-box">
+        <div class="preview-header">
+            <h4>👁️ Trace Típico do Pedido</h4>
+            <span class="badge-tag green">Baseado no laboratório real</span>
+        </div>
+        <TraceBars Spans="TraceBars.SpansPadrao" />
+        <p class="mockup-caption">
+            💡 <em>Olhando essa barra, qualquer um sabe: "Onde o sistema gasta mais tempo?" Resposta: Na PaymentApi (151ms)!</em>
+        </p>
+    </div>
+
+    <!-- Histórico de chamadas -->
+    @if (_historico.Count > 0)
+    {
+        <div class="section-divider">📋 Histórico desta Sessão</div>
+        <div class="historico-table-wrapper">
+            <table class="didactic-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Horário</th>
+                        <th>Status</th>
+                        <th>Tempo</th>
+                        <th>Order ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (item, idx) in _historico.Select((r, i) => (r, i + 1)))
+                    {
+                        <tr class="@(item.Sucesso ? "" : "row-error")">
+                            <td>@idx</td>
+                            <td>@item.Message?.Split('|').FirstOrDefault()</td>
+                            <td>@(item.Sucesso ? "✅ OK" : "❌ Falha")</td>
+                            <td>@item.ElapsedMs ms</td>
+                            <td><code>@(item.OrderId ?? item.Erro ?? "-")</code></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private bool _carregando = false;
+    private OrderResult? _ultimoResultado;
+    private readonly List<OrderResult> _historico = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ProgressService.MarcarConcluidoAsync("simulador");
+    }
+
+    private async Task FazerPedido()
+    {
+        _carregando = true;
+        _ultimoResultado = null;
+
+        var resultado = await ApiService.PostOrderAsync();
+
+        // Guarda o horário no campo Message temporariamente para o histórico
+        resultado.Message = $"{DateTime.Now:HH:mm:ss}|{resultado.Message}";
+
+        _ultimoResultado = resultado;
+        _historico.Insert(0, resultado);
+
+        _carregando = false;
+    }
+
+    private void LimparHistorico()
+    {
+        _historico.Clear();
+        _ultimoResultado = null;
+    }
+}
+

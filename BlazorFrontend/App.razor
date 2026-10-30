@@ -1,0 +1,18 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using BlazorFrontend.Layout
+
+<Router AppAssembly="typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Página não encontrada</PageTitle>
+        <LayoutView Layout="typeof(MainLayout)">
+            <section class="section-card">
+                <h2>😕 Página não encontrada</h2>
+                <p>Retorne ao <a href="/">Dashboard</a>.</p>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>

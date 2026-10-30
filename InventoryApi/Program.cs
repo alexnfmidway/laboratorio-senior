@@ -19,7 +19,7 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
-
+app.MapGet("/health", () => Results.Ok(new { service = "InventoryApi", status = "Healthy" }));
 
 app.MapPost("/inventory/reserve", async (ILogger<Program> logger) =>
 {

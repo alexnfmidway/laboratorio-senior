@@ -1,0 +1,146 @@
+@page "/"
+@inject GatewayApiService ApiService
+@inject ProgressService ProgressService
+
+<PageTitle>Dashboard | Escola de Microsserviços</PageTitle>
+
+<section class="section-card hero-section">
+    <div class="hero-badge">🎓 Didática Passo a Passo com Exemplos do Cotidiano</div>
+    <h1 class="hero-title">Aprenda Arquitetura de Microsserviços de Forma Simples</h1>
+    <p class="hero-desc">
+        Aqui você entende exatamente o que fizemos no nosso laboratório prático
+        (<strong>.NET 10, Jaeger, OpenTelemetry, Polly, Docker e k6</strong>)
+        usando problemas claros, analogias do dia a dia, tabelas passo a passo e simuladores visuais.
+    </p>
+
+    <div class="hero-stats-grid">
+        <div class="stat-card">
+            <span class="stat-number">4</span>
+            <span class="stat-text">APIs Integradas (Gateway YARP, Order, Inventory, Payment)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">100%</span>
+            <span class="stat-text">Rastreabilidade ponta a ponta com Jaeger</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">~254ms</span>
+            <span class="stat-text">Tempo total medido do pedido no trace</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">7</span>
+            <span class="stat-text">Padrões de Engenharia Sênior explicados</span>
+        </div>
+    </div>
+</section>
+
+<!-- Status em tempo real -->
+<section class="section-card">
+    <div class="module-header">
+        <h2>🌡️ Status dos Microsserviços em Tempo Real</h2>
+        <p class="module-subtitle">Verificação ao vivo via Gateway (porta 5000). Clique em Atualizar para checar novamente.</p>
+    </div>
+
+    <div class="services-grid">
+        @if (_carregandoHealth)
+        {
+            <div class="loading-spinner">⏳ Verificando serviços...</div>
+        }
+        else
+        {
+            @foreach (var svc in _servicos)
+            {
+                <ServiceStatusCard Health="svc" />
+            }
+        }
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+        <button class="btn-primary" @onclick="VerificarServicos" disabled="@_carregandoHealth">
+            🔄 Atualizar Status
+        </button>
+        <a href="http://localhost:16686" target="_blank" class="btn-jaeger">
+            🔍 Abrir Jaeger UI
+        </a>
+        <span class="hint-text">Última verificação: @_ultimaVerificacao</span>
+    </div>
+</section>
+
+<!-- Arquitetura visual -->
+<section class="section-card">
+    <div class="module-header">
+        <h2>🏗️ Arquitetura do Laboratório</h2>
+    </div>
+    <div class="arch-diagram">
+        <div class="arch-external">
+            <div class="arch-node client">👤<br/><small>Cliente / Blazor</small></div>
+            <div class="arch-arrow">→ porta 5000</div>
+        </div>
+        <div class="arch-gateway">
+            <div class="arch-node gateway">🚪<br/><strong>GatewayApi</strong><br/><small>YARP + OTEL</small></div>
+        </div>
+        <div class="arch-private">
+            <div class="arch-private-label">🛡️ Rede Privada Docker</div>
+            <div class="arch-internal-grid">
+                <div class="arch-node order">🛒<br/><strong>OrderApi</strong><br/><small>Polly CB</small></div>
+                <div class="arch-node inventory">📦<br/><strong>InventoryApi</strong><br/><small>100ms delay</small></div>
+                <div class="arch-node payment">💳<br/><strong>PaymentApi</strong><br/><small>150ms delay</small></div>
+                <div class="arch-node jaeger">🔍<br/><strong>Jaeger</strong><br/><small>:16686</small></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trilha de módulos -->
+<section class="section-card">
+    <div class="module-header">
+        <h2>📚 Sua Trilha de Aprendizado</h2>
+        <p class="module-subtitle">Progresso atual: <strong>@_percentual%</strong></p>
+    </div>
+    <div class="modulos-grid">
+        @foreach (var modulo in _modulos)
+        {
+            <a href="@GetModuloUrl(modulo.Id)" class="modulo-card @(modulo.Concluido ? "concluido" : "")">
+                <span class="modulo-status">@(modulo.Concluido ? "✅" : "📖")</span>
+                <span>@modulo.Nome</span>
+            </a>
+        }
+    </div>
+</section>
+
+@code {
+    private List<ServiceHealth> _servicos = [];
+    private List<ModuloProgresso> _modulos = [];
+    private bool _carregandoHealth = true;
+    private int _percentual;
+    private string _ultimaVerificacao = "Nunca";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _modulos = await ProgressService.GetProgressoAsync();
+        _percentual = await ProgressService.GetPercentualAsync();
+        await VerificarServicos();
+    }
+
+    private async Task VerificarServicos()
+    {
+        _carregandoHealth = true;
+
+        var tasks = new[]
+        {
+            ApiService.CheckHealthAsync("GatewayApi", "/gateway/health", "🚪"),
+            ApiService.CheckHealthAsync("OrderApi", "/order-health", "🛒"),
+            ApiService.CheckHealthAsync("InventoryApi", "/inventory-health", "📦"),
+            ApiService.CheckHealthAsync("PaymentApi", "/payment-health", "💳"),
+        };
+
+        _servicos = (await Task.WhenAll(tasks)).ToList();
+        _ultimaVerificacao = DateTime.Now.ToString("HH:mm:ss");
+        _carregandoHealth = false;
+    }
+
+    private static string GetModuloUrl(string id) => id switch
+    {
+        "simulador" => "/simulador",
+        _ => $"/modulo/{id}"
+    };
+}

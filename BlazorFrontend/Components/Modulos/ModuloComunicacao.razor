@@ -1,0 +1,84 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 2</div>
+        <h2>Comunicação: Síncrona (HTTP/gRPC) vs Assíncrona (Mensageria)</h2>
+        <p class="module-subtitle">Quando esperar a resposta na hora e quando simplesmente mandar uma mensagem e seguir em frente.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>Se a cada clique o usuário espera: Estoque (100ms) + Pagamento (150ms) + Nota Fiscal (500ms) + E-mail (800ms) + Push (400ms)...</p>
+            <p class="sub-alert">O tempo total passa de 2 segundos! E se o servidor de e-mail cair, <strong>a compra inteira falha</strong>!</p>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <ul>
+                <li><strong>Síncrona:</strong> Apenas para o que o usuário <em>precisa saber imediatamente</em> (saldo, estoque).</li>
+                <li><strong>Assíncrona:</strong> Para tudo que pode acontecer depois sem travar a tela (e-mail, nota fiscal).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- INFOGRÁFICO ILUSTRATIVO SÍNCRONO VS ASSÍNCRONO -->
+    <div class="infographic-card">
+        <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: Síncrono (Travamento) vs Assíncrono (Desacoplado)</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+        </div>
+        <div class="infographic-frame">
+            <img src="images/sync-async-infographic.jpg" alt="Infográfico comparativo de comunicação síncrona bloqueante versus assíncrona desacoplada com filas" class="infographic-img" loading="lazy">
+        </div>
+        <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• <strong>Lado Esquerdo (Síncrono / HTTP):</strong> Cada serviço espera em fila indiana. Tempo total: <strong>2000ms travados</strong>! Se um falhar, tudo cai.
+            <br>• <strong>Lado Direito (Assíncrono / Filas):</strong> O usuário recebe confirmação em apenas <strong>50ms</strong>! Robôs processam em background via RabbitMQ/Kafka.
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="📞 vs 💬" Titulo="Ligação Telefônica vs Mensagem no WhatsApp">
+        <div class="dual-analogy-grid">
+            <div class="analogy-col">
+                <h4>📞 Síncrono = Ligação Telefônica</h4>
+                <p>Você liga. A pessoa precisa estar com o telefone no ouvido naquele exato instante.</p>
+                <p class="analogy-footer-note">Se ela não atender, você fica esperando no mudo — sem comunicação.</p>
+            </div>
+            <div class="analogy-col">
+                <h4>💬 Assíncrono = Mensagem no WhatsApp</h4>
+                <p>Você envia: "Segue o comprovante." <strong>Não fica olhando para a tela</strong> esperando ela ler.</p>
+                <p class="analogy-footer-note">Você guarda o celular no bolso e vai almoçar. Ela lê quando puder.</p>
+            </div>
+        </div>
+    </AnalogyBox>
+
+    <div class="step-table-wrapper">
+        <div class="table-title"><span class="step-num">2️⃣</span><h4>Comparativo: Quando Usar Cada Um</h4></div>
+        <table class="didactic-table">
+            <thead>
+                <tr><th>Tipo</th><th>Como Funciona</th><th>Vantagens</th><th>Quando Usar?</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge-type sync">Síncrono (HTTP)</span></td>
+                    <td>Serviço A chama B e <strong>fica travado esperando</strong>.</td>
+                    <td>Simples; resposta imediata.</td>
+                    <td>Login, validar saldo, checar estoque imediato.</td>
+                </tr>
+                <tr>
+                    <td><span class="badge-type async">Assíncrono (Fila)</span></td>
+                    <td>A publica mensagem e <strong>continua imediatamente</strong>.</td>
+                    <td>Alta performance; mensagem persiste se B cair.</td>
+                    <td>E-mail, nota fiscal, notificações, relatórios.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout callout-info">
+        <div class="callout-icon">🔧</div>
+        <div class="callout-body">
+            <strong>No nosso laboratório:</strong> Usamos comunicação <strong>síncrona (HTTP)</strong>
+            entre OrderApi → InventoryApi e OrderApi → PaymentApi para mostrar o tracing end-to-end claramente.
+        </div>
+    </div>
+</section>

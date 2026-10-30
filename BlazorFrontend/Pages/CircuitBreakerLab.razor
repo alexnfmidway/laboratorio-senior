@@ -1,0 +1,223 @@
+@page "/circuit-breaker-lab"
+@inject GatewayApiService ApiService
+@inject ProgressService ProgressService
+
+<PageTitle>Lab: Circuit Breaker | Escola de Microsserviços</PageTitle>
+
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">⚡ LABORATÓRIO</div>
+        <h2>Lab Interativo: Circuit Breaker com Polly</h2>
+        <p class="module-subtitle">
+            Veja o disjuntor funcionando em tempo real! Faça pedidos, simule falhas e 
+            observe como o estado do Circuit Breaker muda de 🟢 para 🔴 automaticamente.
+        </p>
+    </div>
+
+    <!-- Estado do Circuit Breaker -->
+    <div class="cb-status-panel" style="border-left: 6px solid @_estado.Cor">
+        <div class="cb-main-state">
+            <span class="cb-emoji">@_estado.Emoji</span>
+            <div>
+                <h3>Estado: <strong style="color: @_estado.Cor">@_estado.Estado.ToUpper()</strong></h3>
+                <p>@GetDescricaoEstado()</p>
+            </div>
+        </div>
+        <div class="cb-counters">
+            <div class="counter-card">
+                <span class="counter-num">@_estado.FalhasConsecutivas / @_estado.MaxFalhas</span>
+                <span>Falhas consecutivas</span>
+            </div>
+            <div class="counter-card">
+                <span class="counter-num">@_estado.TotalBloqueadas</span>
+                <span>Bloqueadas (0ms)</span>
+            </div>
+            <div class="counter-card">
+                <span class="counter-num">@_estado.TotalSucesso</span>
+                <span>Com sucesso</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles do Lab -->
+    <div class="cb-controls">
+        <div class="control-group">
+            <label>
+                Máx. falhas antes de abrir:
+                <input type="range" min="1" max="10" @bind="_estado.MaxFalhas" />
+                <strong>@_estado.MaxFalhas</strong>
+            </label>
+            <label>
+                Tempo de espera (segundos):
+                <input type="range" min="5" max="60" @bind="_estado.TempoEsperaSegundos" />
+                <strong>@_estado.TempoEsperaSegundos s</strong>
+            </label>
+        </div>
+
+        <div class="cb-buttons">
+            <button class="btn-primary" @onclick="FazerPedidoNormal" disabled="@_executando">
+                ✅ Pedido Normal
+            </button>
+            <button class="btn-danger" @onclick="SimularFalha" disabled="@_executando">
+                💥 Simular Falha
+            </button>
+            <button class="btn-secondary" @onclick="ResetarCB">
+                🔄 Resetar Disjuntor
+            </button>
+        </div>
+    </div>
+
+    <!-- Log de eventos -->
+    <div class="section-divider">📋 Log de Eventos do Disjuntor</div>
+    <div class="event-log">
+        @foreach (var ev in _eventos)
+        {
+            <div class="event-row @ev.Tipo">
+                <span class="event-time">@ev.Hora</span>
+                <span class="event-icon">@ev.Icone</span>
+                <span class="event-msg">@ev.Mensagem</span>
+                @if (ev.Tempo > 0)
+                {
+                    <span class="event-latencia">@ev.Tempo ms</span>
+                }
+            </div>
+        }
+        @if (_eventos.Count == 0)
+        {
+            <p class="empty-log">Clique em "Pedido Normal" ou "Simular Falha" para começar.</p>
+        }
+    </div>
+
+    <!-- Explicação dos estados -->
+    <div class="section-divider">📚 Os 3 Estados do Disjuntor</div>
+    <div class="states-grid">
+        <div class="state-explanation @(_estado.Estado == "Fechado" ? "state-active" : "")">
+            <span>🟢</span>
+            <h4>FECHADO</h4>
+            <p>Tudo saudável. Requisições passam livremente.</p>
+        </div>
+        <div class="state-explanation @(_estado.Estado == "Aberto" ? "state-active" : "")">
+            <span>🔴</span>
+            <h4>ABERTO</h4>
+            <p>Muitas falhas detectadas. Bloqueio total em <strong>0ms</strong>.</p>
+        </div>
+        <div class="state-explanation @(_estado.Estado == "MeioAberto" ? "state-active" : "")">
+            <span>🟡</span>
+            <h4>MEIO-ABERTO</h4>
+            <p>Testando se o serviço voltou. Uma req. de teste passa.</p>
+        </div>
+    </div>
+</section>
+
+@code {
+    private CircuitBreakerState _estado = new();
+    private bool _executando = false;
+
+    private readonly List<EventoLog> _eventos = [];
+
+    private record EventoLog(string Hora, string Icone, string Mensagem, long Tempo, string Tipo);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ProgressService.MarcarConcluidoAsync("circuit-breaker");
+    }
+
+    private async Task FazerPedidoNormal()
+    {
+        _executando = true;
+        var resultado = await ApiService.PostOrderAsync();
+
+        if (resultado.Sucesso)
+        {
+            _estado.FalhasConsecutivas = 0;
+            _estado.TotalSucesso++;
+
+            if (_estado.Estado == "MeioAberto")
+            {
+                _estado.Estado = "Fechado"; // Serviço se recuperou!
+                LogEvento("✅", $"Disjuntor FECHOU — serviço se recuperou! Order: {resultado.OrderId}", resultado.ElapsedMs, "sucesso");
+            }
+            else
+            {
+                LogEvento("✅", $"Pedido processado. Order: {resultado.OrderId}", resultado.ElapsedMs, "sucesso");
+            }
+        }
+        else
+        {
+            HandleFalha(resultado.Erro ?? "Falha desconhecida", resultado.ElapsedMs);
+        }
+
+        _executando = false;
+    }
+
+    private async Task SimularFalha()
+    {
+        _executando = true;
+        // Simula uma falha local sem chamar a API (para demonstração do CB sem precisar derrubar serviço)
+        await Task.Delay(50);
+        HandleFalha("Falha simulada pelo usuário (sem chamar API)", 50);
+        _executando = false;
+    }
+
+    private void HandleFalha(string mensagem, long tempo)
+    {
+        if (_estado.Estado == "Aberto")
+        {
+            _estado.TotalBloqueadas++;
+            LogEvento("⚡", $"BLOQUEADO INSTANTANEAMENTE (0ms) — CB Aberto! Não chegou nem na rede.", 0, "bloqueado");
+            return;
+        }
+
+        _estado.FalhasConsecutivas++;
+
+        if (_estado.FalhasConsecutivas >= _estado.MaxFalhas)
+        {
+            _estado.Estado = "Aberto";
+            _estado.AberturaEm = DateTime.Now;
+            LogEvento("🔴", $"DISJUNTOR ABERTO! {_estado.MaxFalhas} falhas consecutivas. Aguardando {_estado.TempoEsperaSegundos}s...", tempo, "aberto");
+            // Agenda transição para HalfOpen
+            _ = AgendarMeioAberto();
+        }
+        else
+        {
+            LogEvento("💥", $"Falha #{_estado.FalhasConsecutivas}/{_estado.MaxFalhas}: {mensagem}", tempo, "falha");
+        }
+    }
+
+    private async Task AgendarMeioAberto()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(_estado.TempoEsperaSegundos));
+        if (_estado.Estado == "Aberto")
+        {
+            _estado.Estado = "MeioAberto";
+            LogEvento("🟡", $"Disjuntor MEIO-ABERTO — deixando passar uma requisição de teste...", 0, "meio-aberto");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ResetarCB()
+    {
+        _estado = new CircuitBreakerState
+        {
+            MaxFalhas = _estado.MaxFalhas,
+            TempoEsperaSegundos = _estado.TempoEsperaSegundos
+        };
+        _eventos.Clear();
+        LogEvento("🔄", "Disjuntor resetado manualmente.", 0, "info");
+    }
+
+    private string GetDescricaoEstado() => _estado.Estado switch
+    {
+        "Aberto" => $"🔴 Bloqueando todas as chamadas em 0ms! Aguardando {_estado.TempoEsperaSegundos}s para tentar novamente.",
+        "MeioAberto" => "🟡 Permitindo uma requisição de teste. Se funcionar → volta a Verde. Se falhar → volta a Vermelho.",
+        _ => "🟢 Sistema saudável. Requisições fluindo normalmente para os microsserviços."
+    };
+
+    private void LogEvento(string icone, string msg, long tempo, string tipo)
+    {
+        _eventos.Insert(0, new EventoLog(DateTime.Now.ToString("HH:mm:ss"), icone, msg, tempo, tipo));
+        if (_eventos.Count > 50) _eventos.RemoveAt(_eventos.Count - 1);
+        StateHasChanged();
+    }
+}
+

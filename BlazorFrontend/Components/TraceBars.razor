@@ -1,0 +1,48 @@
+@* Componente que replica visualmente as barras de trace do Jaeger *@
+
+<div class="jaeger-mockup">
+    @foreach (var span in Spans)
+    {
+        <div class="jaeger-bar-row @(span.Indent > 0 ? $"indent-{span.Indent}" : "")">
+            <div class="service-name">
+                <span class="color-dot @span.ColorClass"></span>
+                @if (span.Indent == 0) { <strong>@span.Servico</strong> } else { <span>@span.Servico</span> }
+                : @span.Operacao
+            </div>
+            <div class="bar-track">
+                <div class="bar-fill @span.FillClass"
+                     style="left: @(span.OffsetPercent)%; width: @(span.WidthPercent)%;">
+                    @span.Duracao
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TraceSpan> Spans { get; set; } = [];
+
+    public class TraceSpan
+    {
+        public string Servico { get; set; } = "";
+        public string Operacao { get; set; } = "";
+        public string Duracao { get; set; } = "";
+        public int Indent { get; set; } = 0;
+        public double OffsetPercent { get; set; } = 0;
+        public double WidthPercent { get; set; } = 100;
+        public string ColorClass { get; set; } = "order";
+        public string FillClass { get; set; } = "order-fill";
+    }
+
+    // Spans padrão do laboratório — o trace real medido com Jaeger
+    public static List<TraceSpan> SpansPadrao =>
+    [
+        new() { Servico = "gatewayapi", Operacao = "POST /order", Duracao = "270ms (Span Raiz)", Indent = 0, OffsetPercent = 0, WidthPercent = 100, ColorClass = "gateway", FillClass = "gateway-fill" },
+        new() { Servico = "orderapi", Operacao = "server POST /order", Duracao = "254ms", Indent = 1, OffsetPercent = 1, WidthPercent = 97, ColorClass = "order", FillClass = "order-fill" },
+        new() { Servico = "orderapi", Operacao = "client POST inventory", Duracao = "101ms", Indent = 2, OffsetPercent = 2, WidthPercent = 40, ColorClass = "order", FillClass = "client-inv" },
+        new() { Servico = "inventoryapi", Operacao = "server POST /inventory/reserve", Duracao = "98.4ms", Indent = 3, OffsetPercent = 3, WidthPercent = 38, ColorClass = "inv", FillClass = "inv-fill" },
+        new() { Servico = "orderapi", Operacao = "client POST payment", Duracao = "153ms", Indent = 2, OffsetPercent = 43, WidthPercent = 56, ColorClass = "order", FillClass = "client-pay" },
+        new() { Servico = "paymentapi", Operacao = "server POST /payment/process", Duracao = "151.2ms", Indent = 3, OffsetPercent = 44, WidthPercent = 54, ColorClass = "pay", FillClass = "pay-fill" },
+    ];
+}
+

@@ -1,0 +1,76 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 6</div>
+        <h2>Outbox Pattern (Garantia de Entrega de Eventos)</h2>
+        <p class="module-subtitle">Como garantir que uma mensagem é publicada no broker EXATAMENTE uma vez, mesmo que o servidor caia.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: "Dual Write"</div>
+            <p>O serviço salva o pedido no banco <strong>E</strong> publica o evento no RabbitMQ. Se o servidor cair entre essas duas operações:</p>
+            <p class="sub-alert">O banco foi salvo mas o evento nunca foi publicado! Pedido criado, mas estoque nunca separado, e-mail nunca enviado. <strong>Inconsistência silenciosa!</strong></p>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 O Padrão Outbox</div>
+            <p>Salvar o evento na <strong>mesma transação do banco</strong> (tabela Outbox). Um processo separado (relay) lê a tabela e publica no broker de forma confiável.</p>
+        </div>
+    </div>
+
+    <!-- INFOGRÁFICO ILUSTRATIVO DO OUTBOX PATTERN -->
+    <div class="infographic-card">
+        <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: O Que é o Outbox Pattern</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+        </div>
+        <div class="infographic-frame">
+            <img src="images/outbox-infographic.jpg" alt="Infográfico explicativo do Outbox Pattern com tabela de banco e worker relay" class="infographic-img" loading="lazy">
+        </div>
+        <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• Salva o registro e a mensagem do evento na <strong>mesma transação SQL</strong> (garantindo consistência ACID).
+            <br>• Um processo worker em background lê as mensagens não publicadas e envia para a mensageria com segurança.
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="📮" Titulo="A Caixa de Saída do E-mail">
+        <p>Quando você está sem internet e clica em "Enviar" no Outlook, o e-mail vai para a <strong>Caixa de Saída</strong>. Quando a internet voltar, o Outlook envia automaticamente.</p>
+        <ul>
+            <li>O Outbox Pattern é exatamente isso para eventos de microsserviços!</li>
+            <li>A tabela <code>OutboxMessages</code> é a "Caixa de Saída" do banco de dados.</li>
+            <li>O relay process é o "Outlook sincronizando quando a internet voltou".</li>
+        </ul>
+    </AnalogyBox>
+
+    <CodeSnippet Titulo="💻 Fluxo do Outbox em .NET (EF Core)" Linguagem="C# / EF Core" Codigo="@_codigoOutbox" />
+</section>
+
+@code {
+    private const string _codigoOutbox =
+"""
+// Em UMA única transação de banco:
+using var tx = await db.BeginTransactionAsync();
+
+db.Orders.Add(novoOrder);              // 1. Salva o pedido
+db.OutboxMessages.Add(new()            // 2. Salva o evento na MESMA transação
+{
+    Type = "OrderCreated",
+    Payload = JsonSerializer.Serialize(novoOrder),
+    CreatedAt = DateTime.UtcNow,
+    Published = false                  // Ainda não publicado!
+});
+
+await db.SaveChangesAsync();           // Commit atômico dos dois!
+await tx.CommitAsync();
+
+// --- Worker separado (BackgroundService) ---
+// Roda a cada X segundos:
+var pendentes = db.OutboxMessages.Where(m => !m.Published);
+foreach (var msg in pendentes)
+{
+    await rabbitMQ.PublishAsync(msg.Type, msg.Payload);
+    msg.Published = true;              // Marca como enviado
+}
+await db.SaveChangesAsync();
+""";
+}

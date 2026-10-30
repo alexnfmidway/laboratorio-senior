@@ -40,7 +40,7 @@ builder.Services.AddHttpClient("PaymentClient", client =>
 
 var app = builder.Build();
 
-
+app.MapGet("/health", () => Results.Ok(new { service = "OrderApi", status = "Healthy" }));
 
 app.MapPost("/order", async (IHttpClientFactory clientFactory, ILogger<Program> logger) =>
 {

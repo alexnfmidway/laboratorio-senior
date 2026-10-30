@@ -1,0 +1,69 @@
+@inject ProgressService ProgressService
+@inject NavigationManager Nav
+
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h3>📚 Trilha de Estudos</h3>
+        <p class="progress-label">Seu progresso: <span>@PercentualProgresso%</span></p>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: @PercentualProgresso%"></div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <NavLink href="/" Match="NavLinkMatch.All" class="nav-item" ActiveClass="active">
+            <span class="step-badge">0</span>
+            <span>Dashboard &amp; Visão Geral</span>
+        </NavLink>
+        <NavLink href="/modulo/tracing" class="nav-item" ActiveClass="active">
+            <span class="step-badge">1</span>
+            <span>Distributed Tracing &amp; Jaeger</span>
+        </NavLink>
+        <NavLink href="/modulo/comunicacao" class="nav-item" ActiveClass="active">
+            <span class="step-badge">2</span>
+            <span>Síncrono vs Assíncrono</span>
+        </NavLink>
+        <NavLink href="/modulo/circuit-breaker" class="nav-item" ActiveClass="active">
+            <span class="step-badge">3</span>
+            <span>Circuit Breaker com Polly</span>
+        </NavLink>
+        <NavLink href="/modulo/gateway" class="nav-item" ActiveClass="active">
+            <span class="step-badge">4</span>
+            <span>API Gateway &amp; Service Discovery</span>
+        </NavLink>
+        <NavLink href="/modulo/saga" class="nav-item" ActiveClass="active">
+            <span class="step-badge">5</span>
+            <span>Saga Pattern (Transações)</span>
+        </NavLink>
+        <NavLink href="/modulo/outbox" class="nav-item" ActiveClass="active">
+            <span class="step-badge">6</span>
+            <span>Outbox Pattern (Consistência)</span>
+        </NavLink>
+        <NavLink href="/simulador" class="nav-item" ActiveClass="active">
+            <span class="step-badge">🎮</span>
+            <span>Simulador ao Vivo</span>
+        </NavLink>
+        <NavLink href="/circuit-breaker-lab" class="nav-item" ActiveClass="active">
+            <span class="step-badge">⚡</span>
+            <span>Lab: Circuit Breaker</span>
+        </NavLink>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="mini-card-info">
+            <span class="dot-online"></span>
+            <span>.NET 10 + Jaeger + Docker</span>
+        </div>
+        <button class="btn-reset-progress" @onclick="ResetarProgresso">🔄 Resetar Progresso</button>
+    </div>
+</aside>
+
+@code {
+    [Parameter] public int PercentualProgresso { get; set; }
+
+    private async Task ResetarProgresso()
+    {
+        await ProgressService.ResetarAsync();
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+    }
+}

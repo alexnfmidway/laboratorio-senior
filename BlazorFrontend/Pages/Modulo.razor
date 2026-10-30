@@ -1,0 +1,54 @@
+@page "/modulo/{id}"
+@inject ProgressService ProgressService
+
+<PageTitle>@_titulo | Escola de Microsserviços</PageTitle>
+
+@switch (Id)
+{
+    case "tracing":
+        <ModuloTracing />
+        break;
+    case "comunicacao":
+        <ModuloComunicacao />
+        break;
+    case "circuit-breaker":
+        <ModuloCircuitBreaker />
+        break;
+    case "gateway":
+        <ModuloGateway />
+        break;
+    case "saga":
+        <ModuloSaga />
+        break;
+    case "outbox":
+        <ModuloOutbox />
+        break;
+    default:
+        <section class="section-card">
+            <h2>Módulo não encontrado: @Id</h2>
+            <p>Retorne ao <a href="/">Dashboard</a>.</p>
+        </section>
+        break;
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private string _titulo = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _titulo = Id switch
+        {
+            "tracing" => "Distributed Tracing & Jaeger",
+            "comunicacao" => "Síncrono vs Assíncrono",
+            "circuit-breaker" => "Circuit Breaker com Polly",
+            "gateway" => "API Gateway & Service Discovery",
+            "saga" => "Saga Pattern",
+            "outbox" => "Outbox Pattern",
+            _ => "Módulo"
+        };
+
+        await ProgressService.MarcarConcluidoAsync(Id);
+    }
+}

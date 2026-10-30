@@ -1,0 +1,93 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 3</div>
+        <h2>Circuit Breaker (Disjuntor) com Polly</h2>
+        <p class="module-subtitle">Como evitar que a queda de um serviço derrube o sistema inteiro em cascata.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema: Efeito Dominó</div>
+            <p>Imagine que a <code>PaymentApi</code> caiu. Se 500 pessoas tentarem comprar ao mesmo tempo,
+               a <code>OrderApi</code> abre 500 conexões HTTP travadas esperando.</p>
+            <p class="sub-alert">A memória da <code>OrderApi</code> se esgota. <strong>A OrderApi também cai!</strong> Uma falha pequena vira catástrofe global.</p>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>Instalar um <strong>"disjuntor inteligente"</strong> com a biblioteca Polly no .NET.</p>
+            <p class="sub-alert">Se a <code>PaymentApi</code> falhar 3 vezes seguidas, o disjuntor "desarma" e as próximas chamadas falham em <strong>0ms</strong> sem sequer sair da máquina!</p>
+        </div>
+    </div>
+
+    <!-- INFOGRÁFICO ILUSTRATIVO DO CIRCUIT BREAKER -->
+    <div class="infographic-card">
+        <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: Os 3 Estados do Disjuntor (Circuit Breaker)</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+        </div>
+        <div class="infographic-frame">
+            <img src="images/circuit-breaker-infographic.jpg" alt="Infográfico explicativo dos 3 estados do Circuit Breaker: Closed, Open e Half-Open" class="infographic-img" loading="lazy">
+        </div>
+        <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>• <strong>1. CLOSED (Luz Verde):</strong> Saudável. O tráfego flui normalmente entre os serviços.
+            <br>• <strong>2. OPEN (Chave Desarmada):</strong> Detectou 3 falhas consecutivas. Bloqueia chamadas em <strong>0ms</strong> instantaneamente!
+            <br>• <strong>3. HALF-OPEN (Luz Amarela):</strong> Após descanso (30s), deixa passar 1 teste. Se OK → volta a Fechado; se falhar → volta a Aberto.
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="⚡" Titulo="O Disjuntor da Caixa de Luz da Sua Casa">
+        <ul>
+            <li>Se você ligar chuveiro + air fryer + ferro ao mesmo tempo, o disjuntor faz <em>"CLACK!"</em> e desliga aquele cômodo.</li>
+            <li><strong>Por quê?</strong> Para impedir que os fios esquentem até pegar fogo e queimar a casa inteira!</li>
+            <li>Em software: o Circuit Breaker "desarma" a conexão com o serviço doente para não deixar o servidor todo queimar por falta de memória.</li>
+        </ul>
+    </AnalogyBox>
+
+    <div class="states-grid">
+        <div class="state-explanation">
+            <span>🟢</span>
+            <h4>FECHADO (Normal)</h4>
+            <p>Tudo funcionando. Requisições passam livremente.</p>
+        </div>
+        <div class="state-explanation">
+            <span>🔴</span>
+            <h4>ABERTO (Falhou)</h4>
+            <p>Após N falhas consecutivas, bloqueia tudo em <strong>0ms</strong>. Sem chamar a rede!</p>
+        </div>
+        <div class="state-explanation">
+            <span>🟡</span>
+            <h4>MEIO-ABERTO (Testando)</h4>
+            <p>Após cooldown, deixa 1 req. de teste passar. Se OK → volta ao Verde.</p>
+        </div>
+    </div>
+
+    <CodeSnippet Titulo="💻 Como configuramos no .NET com Polly (OrderApi/Program.cs)" Linguagem="C# / Polly" Codigo="@_codigoPolly" />
+
+    <div class="callout callout-info">
+        <div class="callout-icon">🎮</div>
+        <div class="callout-body">
+            <strong>Experimente agora!</strong> Vá para o
+            <a href="/circuit-breaker-lab">Lab de Circuit Breaker</a> e simule falhas interativamente
+            para ver o disjuntor abrindo e fechando em tempo real!
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string _codigoPolly =
+"""
+builder.Services.AddHttpClient("PaymentClient", client =>
+{
+    client.BaseAddress = new Uri("http://paymentapi:8080");
+})
+.AddTransientHttpErrorPolicy(policy =>
+    policy.CircuitBreakerAsync(
+        handledEventsAllowedBeforeBreaking: 3,      // Se falhar 3 vezes...
+        durationOfBreak: TimeSpan.FromSeconds(30),  // ...fica ABERTO por 30s
+        onBreak: (_, ts) => Console.WriteLine("⚠️ Disjuntor ABRIU!"),
+        onReset: () => Console.WriteLine("✅ Disjuntor FECHOU!")
+    )
+);
+""";
+}

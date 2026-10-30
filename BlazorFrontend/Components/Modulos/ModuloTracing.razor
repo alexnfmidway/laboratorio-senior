@@ -1,0 +1,93 @@
+<section class="section-card lesson-module">
+    <div class="module-header">
+        <div class="module-number">MÓDULO 1</div>
+        <h2>Distributed Tracing &amp; Jaeger (OpenTelemetry)</h2>
+        <p class="module-subtitle">Como descobrir exatamente em qual serviço o sistema demorou ou falhou.</p>
+    </div>
+
+    <div class="problem-objective-grid">
+        <div class="card-problem">
+            <div class="badge-tag red">❌ O Problema no Mundo Real</div>
+            <p>Imagine que um cliente clica em "Finalizar Compra" e a tela fica carregando por 10 segundos.
+               Em um sistema de microsserviços, a chamada passou por 4 ou 5 APIs diferentes.
+               <strong>Como você descobre quem demorou ou onde quebrou?</strong></p>
+            <p class="sub-alert">Sem Distributed Tracing, você abriria os logs de 5 servidores diferentes procurando linhas perdidas no meio de milhões de requests!</p>
+        </div>
+        <div class="card-objective">
+            <div class="badge-tag green">🎯 O Nosso Objetivo</div>
+            <p>Colocar uma <strong>"etiqueta única"</strong> (<code>Trace ID</code>) na primeira requisição.
+               Conforme ela viaja de serviço em serviço, a etiqueta é repassada no cabeçalho HTTP automaticamente.</p>
+            <p class="sub-alert">No final, o <strong>Jaeger</strong> mostra: <em>"Pedido: 254ms total. Estoque: 98ms. Pagamento: 151ms."</em></p>
+        </div>
+    </div>
+
+    <!-- INFOGRÁFICO ILUSTRATIVO DO TRACING -->
+    <div class="infographic-card">
+        <div class="infographic-header">
+            <span class="infographic-title">🎨 Infográfico Visual: O que é Distributed Tracing de Batida de Olho</span>
+            <span class="badge-tag green">Ilustração Intuitiva</span>
+        </div>
+        <div class="infographic-frame">
+            <img src="images/tracing-infographic.jpg" alt="Infográfico explicativo de Distributed Tracing com Order, Inventory, Payment, Trace ID e Jaeger" class="infographic-img" loading="lazy">
+        </div>
+        <div class="infographic-caption">
+            <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
+            <br>1. <strong>O Carrinho (Order Service):</strong> O cliente clica em comprar. O sistema carimba uma etiqueta digital <code>Trace ID: #9842</code>.
+            <br>2. <strong>As Caixas no Galpão (Inventory Service):</strong> A requisição vai até o estoque com a mesma etiqueta (~98ms).
+            <br>3. <strong>A Maquininha de Cartão (Payment Service):</strong> A requisição passa pelo cartão mantendo a mesma etiqueta (~151ms).
+            <br>4. <strong>A Lupa do Jaeger:</strong> O Jaeger junta todos os cronômetros e mostra na barra colorida: tempo total ~254ms!
+        </div>
+    </div>
+
+    <AnalogyBox Emoji="📦" Titulo="Exemplo do Dia a Dia: O Código de Rastreamento dos Correios">
+        <p>Quando você compra um tênis na internet, a loja te dá um código único: <code>BR123456789SP</code>.</p>
+        <ul>
+            <li>Você <strong>não precisa</strong> ligar para o galpão de Curitiba, depois para São Paulo, depois para o entregador.</li>
+            <li>Você digita esse código no app e vê a linha do tempo completa.</li>
+            <li><strong>Distributed Tracing é exatamente isso:</strong> O <code>Trace ID</code> é o código de rastreamento, e cada parada é um <code>Span</code>!</li>
+        </ul>
+    </AnalogyBox>
+
+    <div class="live-preview-box">
+        <div class="preview-header">
+            <h4>👁️ Trace Típico do Nosso Laboratório no Jaeger</h4>
+            <span class="badge-tag green">Verificado no Docker Compose</span>
+        </div>
+        <TraceBars Spans="TraceBars.SpansPadrao" />
+        <p class="mockup-caption">💡 <em>Olhando essa barra, qualquer um sabe: quem demorou mais? A PaymentApi (151ms)!</em></p>
+    </div>
+
+    <CodeSnippet Titulo="💻 O que escrevemos no código .NET 10 (Program.cs de cada API)" Linguagem="C# / OpenTelemetry" Codigo="@_codigoOtel">
+        <strong>Explicando as 3 linhas chave:</strong>
+        <ul>
+            <li><code>AddAspNetCoreInstrumentation()</code>: Liga o cronômetro automaticamente em cada request.</li>
+            <li><code>AddHttpClientInstrumentation()</code>: Injeta o <code>Trace ID</code> no cabeçalho HTTP sem você fazer nada!</li>
+            <li><code>AddOtlpExporter()</code>: Envia os spans para o Jaeger via gRPC porta 4317.</li>
+        </ul>
+    </CodeSnippet>
+
+    <div class="callout callout-info">
+        <div class="callout-icon">🎮</div>
+        <div class="callout-body">
+            <strong>Pratique agora!</strong> Vá para o
+            <a href="/simulador">Simulador de Pedidos</a>, faça um pedido e depois abra o
+            <a href="http://localhost:16686" target="_blank">Jaeger UI</a> para ver o trace gerado em tempo real!
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string _codigoOtel =
+"""
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("orderapi"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation() // Captura requisições que chegam
+            .AddHttpClientInstrumentation() // Injeta Trace ID nas chamadas HTTP
+            .AddOtlpExporter(opt =>
+                opt.Endpoint = new Uri("http://jaeger:4317")); // Envia para Jaeger
+    });
+""";
+}
