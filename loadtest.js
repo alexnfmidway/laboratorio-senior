@@ -7,7 +7,11 @@ export const options = {
 };
 
 export default function () {
-  const res = http.post('http://host.docker.internal:5000/order');
+  const res = http.post('http://host.docker.internal:5000/order', null, {
+    headers: {
+      'Idempotency-Key': `loadtest-${__VU}-${__ITER}`,
+    },
+  });
   check(res, {
     'is status 200': (r) => r.status === 200,
   });

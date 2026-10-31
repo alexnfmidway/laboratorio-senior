@@ -29,6 +29,7 @@ public class CircuitBreakerState
     public DateTime? AberturaEm { get; set; }
     public int MaxFalhas { get; set; } = 3;
     public int TempoEsperaSegundos { get; set; } = 30;
+    public int TempoRestanteSegundos { get; set; }
 
     public string Emoji => Estado switch
     {
@@ -45,10 +46,20 @@ public class CircuitBreakerState
     };
 }
 
+public class CircuitBreakerSnapshot
+{
+    public string State { get; set; } = "Closed";
+    public int ConsecutiveFailures { get; set; }
+    public int TotalBlocked { get; set; }
+    public int TotalSuccess { get; set; }
+    public int FailureThreshold { get; set; }
+    public int BreakDurationSeconds { get; set; }
+    public int RemainingSeconds { get; set; }
+}
+
 public class ModuloProgresso
 {
     public string Id { get; set; } = "";
     public string Nome { get; set; } = "";
     public bool Concluido { get; set; }
 }
-

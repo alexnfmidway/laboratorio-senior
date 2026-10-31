@@ -5,8 +5,8 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  initMermaid();
   initTheme();
+  initMermaid();
   initScrollSpyAndProgress();
   initSearch();
   initJaegerSimulator();
@@ -16,19 +16,52 @@ document.addEventListener('DOMContentLoaded', () => {
   initChecklist();
 });
 
+function readLocalStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn(`Não foi possível ler a preferência "${key}" do armazenamento local.`, error);
+    return null;
+  }
+}
+
+function writeLocalStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn(`Não foi possível salvar a preferência "${key}" no armazenamento local.`, error);
+  }
+}
+
 /* ===================================================================
    1. INICIALIZAÇÃO DO MERMAID.JS COM SUPORTE A TEMA
    =================================================================== */
 function initMermaid() {
-  if (window.mermaid) {
-    const isDark = document.body.classList.contains('dark-theme');
+  if (!window.mermaid) return;
+
+  const diagrams = [...document.querySelectorAll('.mermaid')];
+  const sources = new Map(diagrams.map((diagram) => [diagram, diagram.innerHTML]));
+
+  function renderDiagrams() {
     mermaid.initialize({
-      startOnLoad: true,
-      theme: isDark ? 'dark' : 'neutral',
+      startOnLoad: false,
+      theme: document.body.classList.contains('dark-theme') ? 'dark' : 'neutral',
       fontFamily: 'Plus Jakarta Sans',
-      securityLevel: 'loose',
+      securityLevel: 'strict',
+    });
+
+    diagrams.forEach((diagram) => {
+      diagram.removeAttribute('data-processed');
+      diagram.innerHTML = sources.get(diagram) || '';
+    });
+
+    mermaid.run({ nodes: diagrams }).catch((error) => {
+      console.error('Não foi possível renderizar os diagramas Mermaid.', error);
     });
   }
+
+  renderDiagrams();
+  window.addEventListener('app-theme-change', renderDiagrams);
 }
 
 /* ===================================================================
@@ -39,14 +72,14 @@ function initTheme() {
   const themeIcon = document.getElementById('theme-icon');
 
   // Recupera preferência salva (padrão claro / leve)
-  const savedTheme = localStorage.getItem('app-theme') || 'light';
+  const savedTheme = readLocalStorage('app-theme') || 'light';
   applyTheme(savedTheme);
 
   toggleBtn.addEventListener('click', () => {
     const currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
     const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme);
-    localStorage.setItem('app-theme', nextTheme);
+    writeLocalStorage('app-theme', nextTheme);
   });
 
   function applyTheme(theme) {
@@ -55,12 +88,18 @@ function initTheme() {
       document.body.classList.add('dark-theme');
       themeIcon.textContent = '☀️';
       toggleBtn.setAttribute('title', 'Alternar para Modo Claro');
+      toggleBtn.setAttribute('aria-label', 'Alternar para Modo Claro');
+      toggleBtn.setAttribute('aria-pressed', 'true');
     } else {
       document.body.classList.remove('dark-theme');
       document.body.classList.add('light-theme');
       themeIcon.textContent = '🌙';
       toggleBtn.setAttribute('title', 'Alternar para Modo Escuro');
+      toggleBtn.setAttribute('aria-label', 'Alternar para Modo Escuro');
+      toggleBtn.setAttribute('aria-pressed', 'false');
     }
+
+    window.dispatchEvent(new Event('app-theme-change'));
   }
 }
 
@@ -74,17 +113,22 @@ function initScrollSpyAndProgress() {
   const progressPercentText = document.getElementById('progress-percent');
 
   // Atualiza barra de progresso no scroll da página
-  window.addEventListener('scroll', () => {
+  function updateScrollProgress() {
     const scrollTop = window.scrollY;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const progress = Math.min(100, Math.max(0, Math.round((scrollTop / docHeight) * 100)));
+    const progress = docHeight > 0
+      ? Math.min(100, Math.max(0, Math.round((scrollTop / docHeight) * 100)))
+      : 0;
 
-    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (progressBar) {
+      progressBar.style.width = `${progress}%`;
+      progressBar.setAttribute('aria-valuenow', String(progress));
+    }
     if (progressPercentText) progressPercentText.textContent = `${progress}%`;
 
-    // Atualiza item ativo da sidebar
     let currentSectionId = '';
     sections.forEach((section) => {
+      if (section.hidden || getComputedStyle(section).display === 'none') return;
       const rect = section.getBoundingClientRect();
       if (rect.top <= 200 && rect.bottom >= 100) {
         currentSectionId = section.id;
@@ -93,10 +137,20 @@ function initScrollSpyAndProgress() {
 
     if (currentSectionId) {
       navItems.forEach((item) => {
-        item.classList.toggle('active', item.getAttribute('data-target') === currentSectionId);
+        const isActive = item.getAttribute('data-target') === currentSectionId;
+        item.classList.toggle('active', isActive);
+        if (isActive) {
+          item.setAttribute('aria-current', 'location');
+        } else {
+          item.removeAttribute('aria-current');
+        }
       });
     }
-  });
+  }
+
+  window.addEventListener('scroll', updateScrollProgress, { passive: true });
+  window.addEventListener('resize', updateScrollProgress);
+  updateScrollProgress();
 }
 
 /* ===================================================================
@@ -104,24 +158,24 @@ function initScrollSpyAndProgress() {
    =================================================================== */
 function initSearch() {
   const searchInput = document.getElementById('module-search');
-  const sections = document.querySelectorAll('.lesson-module');
+  const results = document.getElementById('search-results');
+  const sections = document.querySelectorAll('main section');
 
   searchInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
-
-    if (!query) {
-      sections.forEach((sec) => (sec.style.display = 'block'));
-      return;
-    }
+    let matches = 0;
 
     sections.forEach((sec) => {
-      const text = sec.innerText.toLowerCase();
-      if (text.includes(query)) {
-        sec.style.display = 'block';
-      } else {
-        sec.style.display = 'none';
-      }
+      const isMatch = !query || sec.innerText.toLowerCase().includes(query);
+      sec.style.display = isMatch ? '' : 'none';
+      if (isMatch) matches++;
     });
+
+    results.textContent = query
+      ? matches === 0
+        ? `Nenhuma seção encontrada para "${searchInput.value.trim()}".`
+        : `${matches} ${matches === 1 ? 'seção encontrada' : 'seções encontradas'}.`
+      : '';
   });
 }
 
@@ -163,7 +217,7 @@ function initJaegerSimulator() {
     // Gera Trace ID no padrão W3C hex (32 caracteres)
     const traceId = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
     traceIdEl.textContent = traceId;
-    traceStatus.textContent = '🚪 GatewayApi (porta 5000) recebeu o pedido e gerou o Trace raiz...';
+    traceStatus.textContent = '🚪 Simulação: o GatewayApi receberia o pedido e iniciaria o trace...';
     spanCountEl.textContent = '1 / 4';
 
     // Etapa 1: Inicia GatewayApi (YARP na porta 5000)
@@ -174,7 +228,7 @@ function initJaegerSimulator() {
 
     // Etapa 2: YARP roteia para OrderApi na rede interna (porta 8080)
     setTimeout(() => {
-      traceStatus.textContent = '🛒 YARP reencaminhou para OrderApi:8080 (rede privada)...';
+      traceStatus.textContent = '🛒 Simulação: o YARP encaminharia o pedido para OrderApi:8080...';
       spanCountEl.textContent = '2 / 4';
       barOrder.style.width = '96%';
       barOrder.style.left = '2%';
@@ -182,7 +236,7 @@ function initJaegerSimulator() {
 
       // Etapa 3: OrderApi descobre e chama InventoryApi via Docker DNS
       setTimeout(() => {
-        traceStatus.textContent = '📦 Docker DNS resolveu "inventoryapi" ➜ Estoque verificado (~98ms)...';
+        traceStatus.textContent = '📦 Exemplo: Docker DNS resolve "inventoryapi" e o estoque leva ~98ms...';
         spanCountEl.textContent = '3 / 4';
         barInv.style.width = '37%';
         barInv.style.left = '6%';
@@ -190,7 +244,7 @@ function initJaegerSimulator() {
 
         // Etapa 4: OrderApi descobre e chama PaymentApi via Docker DNS
         setTimeout(() => {
-          traceStatus.textContent = '💳 Docker DNS resolveu "paymentapi" ➜ Cartão cobrado (~151ms)...';
+          traceStatus.textContent = '💳 Exemplo: Docker DNS resolve "paymentapi" e o pagamento leva ~151ms...';
           spanCountEl.textContent = '4 / 4';
           barPay.style.width = '55%';
           barPay.style.left = '43%';
@@ -201,20 +255,20 @@ function initJaegerSimulator() {
             durationEl.textContent = '258.4 ms';
             if (barGateway) barGateway.textContent = '258.4 ms (Gateway Raiz - Porta 5000)';
             barOrder.textContent = '254.6 ms (OrderApi interna)';
-            traceStatus.textContent = '✅ Trace distribuído completo correlacionado no Jaeger!';
+            traceStatus.textContent = '✅ Simulação concluída. Nenhuma requisição ou trace foi enviado ao Jaeger.';
             btnRun.disabled = false;
             isRunning = false;
 
             tagsBox.innerHTML = `
               <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-                <div><strong>🔍 Detalhes da Cadeia Distribuída Completa (4 Microsserviços):</strong></div>
-                <div>• <code>traceparent: 00-${traceId}-01</code> (propagado automaticamente pelo YARP e HttpClient).</div>
+                <div><strong>🔍 Exemplo didático da cadeia distribuída (4 serviços):</strong></div>
+                <div>• <code>traceparent: 00-${traceId}-01</code> (valor ilustrativo; não foi propagado por uma chamada real).</div>
                 <div>• <strong>Span 1 (Raiz):</strong> GatewayApi (258.4ms) | <code>http.method=POST /order</code> | Porta: <code>5000</code></div>
                 <div>• <strong>Span 2 (Filho):</strong> OrderApi (254.6ms) | <code>http.target=orderapi:8080</code> (privado)</div>
                 <div>• <strong>Span 3 (Neto):</strong> InventoryApi (98.4ms) | Descoberto via: <code>Docker DNS</code></div>
                 <div>• <strong>Span 4 (Neto):</strong> PaymentApi (151.2ms) | Descoberto via: <code>Docker DNS</code></div>
                 <div style="color: var(--ms-green-dark); font-weight: 600; margin-top: 0.2rem;">
-                  🎯 Conclusão: O cliente só conversou com o Gateway na porta 5000, e o Jaeger rastreou os 4 nós perfeitamente!
+                  🎯 Nesta simulação, o cliente se comunica com o Gateway e os spans representam os serviços internos.
                 </div>
               </div>
             `;
@@ -284,7 +338,7 @@ function initCircuitBreakerSimulator() {
     state = 'OPEN';
     cooldownSeconds = 8; // 8 segundos para a demo interativa
     addLog('⚡ ALERTA: 3 falhas consecutivas! O Disjuntor DESARMOU (Estado: ABERTO)!', 'error');
-    addLog('🛡️ Polly agora protegerá o sistema rejeitando chamadas de imediato.', 'warning');
+    addLog('🛡️ No cenário simulado, o circuito aberto bloqueia as próximas requisições.', 'warning');
     updateUI();
 
     if (cooldownInterval) clearInterval(cooldownInterval);
@@ -314,7 +368,7 @@ function initCircuitBreakerSimulator() {
 
     if (state === 'HALF_OPEN') {
       if (isCrashed) {
-        addLog('❌ Falha na requisição de teste! O serviço PaymentApi ainda está fora do ar.', 'error');
+        addLog('❌ Falha simulada na requisição de teste; o circuito volta a abrir.', 'error');
         tripCircuitBreaker();
       } else {
         state = 'CLOSED';
@@ -329,7 +383,7 @@ function initCircuitBreakerSimulator() {
     // Estado CLOSED
     if (isCrashed) {
       consecutiveFails++;
-      addLog(`❌ Falha na chamada HTTP para PaymentApi (HTTP 500 Internal Error) [${consecutiveFails}/3].`, 'error');
+      addLog(`❌ Falha simulada de pagamento [${consecutiveFails}/3].`, 'error');
       if (consecutiveFails >= 3) {
         tripCircuitBreaker();
       } else {
@@ -337,7 +391,7 @@ function initCircuitBreakerSimulator() {
       }
     } else {
       consecutiveFails = 0;
-      addLog('✅ Requisição processada com sucesso! OrderApi ➜ InventoryApi ➜ PaymentApi (200 OK).', 'success');
+      addLog('✅ Requisição simulada com sucesso! OrderApi ➜ InventoryApi ➜ PaymentApi.', 'success');
       updateUI();
     }
   });
@@ -440,9 +494,12 @@ function initChecklist() {
   let savedState = {};
 
   try {
-    savedState = JSON.parse(localStorage.getItem(storageKey)) || {};
+    const storedState = JSON.parse(readLocalStorage(storageKey) || '{}');
+    if (storedState && typeof storedState === 'object' && !Array.isArray(storedState)) {
+      savedState = storedState;
+    }
   } catch (err) {
-    savedState = {};
+    console.warn('O progresso salvo do checklist está inválido; iniciando uma lista vazia.', err);
   }
 
   checklistItems.forEach((item, index) => {
@@ -455,13 +512,10 @@ function initChecklist() {
       item.classList.add('done');
     }
 
-    item.addEventListener('click', (e) => {
-      if (e.target !== checkbox) {
-        checkbox.checked = !checkbox.checked;
-      }
+    item.addEventListener('change', () => {
       item.classList.toggle('done', checkbox.checked);
       savedState[index] = checkbox.checked;
-      localStorage.setItem(storageKey, JSON.stringify(savedState));
+      writeLocalStorage(storageKey, JSON.stringify(savedState));
     });
   });
 }

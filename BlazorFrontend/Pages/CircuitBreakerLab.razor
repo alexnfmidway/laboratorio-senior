@@ -1,6 +1,8 @@
 @page "/circuit-breaker-lab"
 @inject GatewayApiService ApiService
 @inject ProgressService ProgressService
+@inject ILogger<CircuitBreakerLab> Logger
+@implements IDisposable
 
 <PageTitle>Lab: Circuit Breaker | Escola de Microsserviços</PageTitle>
 
@@ -30,7 +32,7 @@
             </div>
             <div class="counter-card">
                 <span class="counter-num">@_estado.TotalBloqueadas</span>
-                <span>Bloqueadas (0ms)</span>
+                <span>Chamadas de pagamento rejeitadas</span>
             </div>
             <div class="counter-card">
                 <span class="counter-num">@_estado.TotalSucesso</span>
@@ -42,16 +44,8 @@
     <!-- Controles do Lab -->
     <div class="cb-controls">
         <div class="control-group">
-            <label>
-                Máx. falhas antes de abrir:
-                <input type="range" min="1" max="10" @bind="_estado.MaxFalhas" />
-                <strong>@_estado.MaxFalhas</strong>
-            </label>
-            <label>
-                Tempo de espera (segundos):
-                <input type="range" min="5" max="60" @bind="_estado.TempoEsperaSegundos" />
-                <strong>@_estado.TempoEsperaSegundos s</strong>
-            </label>
+            <p>Configuração da API: abre após <strong>@_estado.MaxFalhas falhas</strong>;
+                período de espera: <strong>@_estado.TempoEsperaSegundos s</strong>.</p>
         </div>
 
         <div class="cb-buttons">
@@ -61,7 +55,7 @@
             <button class="btn-danger" @onclick="SimularFalha" disabled="@_executando">
                 💥 Simular Falha
             </button>
-            <button class="btn-secondary" @onclick="ResetarCB">
+            <button class="btn-secondary" @onclick="ResetarCB" disabled="@_executando">
                 🔄 Resetar Disjuntor
             </button>
         </div>
@@ -99,7 +93,7 @@
         <div class="state-explanation @(_estado.Estado == "Aberto" ? "state-active" : "")">
             <span>🔴</span>
             <h4>ABERTO</h4>
-            <p>Muitas falhas detectadas. Bloqueio total em <strong>0ms</strong>.</p>
+            <p>Muitas falhas detectadas. Chamadas ao pagamento são rejeitadas sem nova tentativa de rede.</p>
         </div>
         <div class="state-explanation @(_estado.Estado == "MeioAberto" ? "state-active" : "")">
             <span>🟡</span>
@@ -112,6 +106,7 @@
 @code {
     private CircuitBreakerState _estado = new();
     private bool _executando = false;
+    private readonly CancellationTokenSource _refreshCancellation = new();
 
     private readonly List<EventoLog> _eventos = [];
 
@@ -120,95 +115,120 @@
     protected override async Task OnInitializedAsync()
     {
         await ProgressService.MarcarConcluidoAsync("circuit-breaker");
+        await AtualizarEstadoAsync();
+        _ = AtualizarPeriodicamenteAsync(_refreshCancellation.Token);
     }
 
     private async Task FazerPedidoNormal()
     {
         _executando = true;
-        var resultado = await ApiService.PostOrderAsync();
-
-        if (resultado.Sucesso)
+        try
         {
-            _estado.FalhasConsecutivas = 0;
-            _estado.TotalSucesso++;
-
-            if (_estado.Estado == "MeioAberto")
-            {
-                _estado.Estado = "Fechado"; // Serviço se recuperou!
-                LogEvento("✅", $"Disjuntor FECHOU — serviço se recuperou! Order: {resultado.OrderId}", resultado.ElapsedMs, "sucesso");
-            }
-            else
+            var resultado = await ApiService.PostOrderAsync();
+            if (resultado.Sucesso)
             {
                 LogEvento("✅", $"Pedido processado. Order: {resultado.OrderId}", resultado.ElapsedMs, "sucesso");
             }
-        }
-        else
-        {
-            HandleFalha(resultado.Erro ?? "Falha desconhecida", resultado.ElapsedMs);
-        }
+            else
+            {
+                LogEvento("💥", resultado.Erro ?? "O pedido falhou.", resultado.ElapsedMs, "falha");
+            }
 
-        _executando = false;
+            await AtualizarEstadoAsync();
+        }
+        finally
+        {
+            _executando = false;
+        }
     }
 
     private async Task SimularFalha()
     {
         _executando = true;
-        // Simula uma falha local sem chamar a API (para demonstração do CB sem precisar derrubar serviço)
-        await Task.Delay(50);
-        HandleFalha("Falha simulada pelo usuário (sem chamar API)", 50);
-        _executando = false;
-    }
-
-    private void HandleFalha(string mensagem, long tempo)
-    {
-        if (_estado.Estado == "Aberto")
+        try
         {
-            _estado.TotalBloqueadas++;
-            LogEvento("⚡", $"BLOQUEADO INSTANTANEAMENTE (0ms) — CB Aberto! Não chegou nem na rede.", 0, "bloqueado");
-            return;
+            var resultado = await ApiService.PostOrderAsync(simulatePaymentFailure: true);
+            LogEvento(
+                resultado.Sucesso ? "✅" : "💥",
+                resultado.Sucesso ? "O pagamento de demonstração foi aprovado." : resultado.Erro ?? "Falha simulada.",
+                resultado.ElapsedMs,
+                resultado.Sucesso ? "sucesso" : "falha");
+            await AtualizarEstadoAsync();
         }
-
-        _estado.FalhasConsecutivas++;
-
-        if (_estado.FalhasConsecutivas >= _estado.MaxFalhas)
+        finally
         {
-            _estado.Estado = "Aberto";
-            _estado.AberturaEm = DateTime.Now;
-            LogEvento("🔴", $"DISJUNTOR ABERTO! {_estado.MaxFalhas} falhas consecutivas. Aguardando {_estado.TempoEsperaSegundos}s...", tempo, "aberto");
-            // Agenda transição para HalfOpen
-            _ = AgendarMeioAberto();
-        }
-        else
-        {
-            LogEvento("💥", $"Falha #{_estado.FalhasConsecutivas}/{_estado.MaxFalhas}: {mensagem}", tempo, "falha");
+            _executando = false;
         }
     }
 
-    private async Task AgendarMeioAberto()
+    private async Task AtualizarPeriodicamenteAsync(CancellationToken cancellationToken)
     {
-        await Task.Delay(TimeSpan.FromSeconds(_estado.TempoEsperaSegundos));
-        if (_estado.Estado == "Aberto")
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        try
         {
-            _estado.Estado = "MeioAberto";
-            LogEvento("🟡", $"Disjuntor MEIO-ABERTO — deixando passar uma requisição de teste...", 0, "meio-aberto");
-            await InvokeAsync(StateHasChanged);
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(AtualizarEstadoAsync);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
     }
 
-    private void ResetarCB()
+    private async Task AtualizarEstadoAsync()
     {
-        _estado = new CircuitBreakerState
+        try
         {
-            MaxFalhas = _estado.MaxFalhas,
-            TempoEsperaSegundos = _estado.TempoEsperaSegundos
+            var snapshot = await ApiService.GetCircuitBreakerAsync();
+            AplicarSnapshot(snapshot);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível consultar o estado do Circuit Breaker.");
+            if (_eventos.Count == 0)
+            {
+                LogEvento("⚠️", "Não foi possível consultar o estado real do disjuntor.", 0, "falha");
+            }
+        }
+    }
+
+    private void AplicarSnapshot(CircuitBreakerSnapshot snapshot)
+    {
+        _estado.Estado = snapshot.State switch
+        {
+            "Open" => "Aberto",
+            "HalfOpen" => "MeioAberto",
+            _ => "Fechado"
         };
-        _eventos.Clear();
-        LogEvento("🔄", "Disjuntor resetado manualmente.", 0, "info");
+        _estado.FalhasConsecutivas = snapshot.ConsecutiveFailures;
+        _estado.TotalBloqueadas = snapshot.TotalBlocked;
+        _estado.TotalSucesso = snapshot.TotalSuccess;
+        _estado.MaxFalhas = snapshot.FailureThreshold;
+        _estado.TempoEsperaSegundos = snapshot.BreakDurationSeconds;
+        _estado.TempoRestanteSegundos = snapshot.RemainingSeconds;
+        StateHasChanged();
+    }
+
+    private async Task ResetarCB()
+    {
+        try
+        {
+            var snapshot = await ApiService.ResetCircuitBreakerAsync();
+            _eventos.Clear();
+            AplicarSnapshot(snapshot);
+            LogEvento("🔄", "Disjuntor real resetado.", 0, "info");
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Não foi possível resetar o Circuit Breaker.");
+            LogEvento("⚠️", "Não foi possível resetar o disjuntor. Verifique a configuração da API.", 0, "falha");
+        }
     }
 
     private string GetDescricaoEstado() => _estado.Estado switch
     {
-        "Aberto" => $"🔴 Bloqueando todas as chamadas em 0ms! Aguardando {_estado.TempoEsperaSegundos}s para tentar novamente.",
+        "Aberto" => $"🔴 Bloqueando chamadas ao pagamento. Nova tentativa em aproximadamente {_estado.TempoRestanteSegundos}s.",
         "MeioAberto" => "🟡 Permitindo uma requisição de teste. Se funcionar → volta a Verde. Se falhar → volta a Vermelho.",
         _ => "🟢 Sistema saudável. Requisições fluindo normalmente para os microsserviços."
     };
@@ -219,5 +239,10 @@
         if (_eventos.Count > 50) _eventos.RemoveAt(_eventos.Count - 1);
         StateHasChanged();
     }
-}
 
+    public void Dispose()
+    {
+        _refreshCancellation.Cancel();
+        _refreshCancellation.Dispose();
+    }
+}

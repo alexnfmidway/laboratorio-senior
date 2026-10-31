@@ -1,13 +1,15 @@
+using OrderApi;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Polly;
 using Polly.Extensions.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<CircuitBreakerMonitor>();
+builder.Services.AddScoped<OrderProcessor>();
 
-// Configure OpenTelemetry
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracerProviderBuilder =>
     {
@@ -19,55 +21,68 @@ builder.Services.AddOpenTelemetry()
             .AddOtlpExporter();
     });
 
-// Configure HttpClient with Polly Circuit Breaker
 builder.Services.AddHttpClient("InventoryClient", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["InventoryApiUrl"] ?? "http://localhost:5001");
-})
-.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
-    handledEventsAllowedBeforeBreaking: 3,
-    durationOfBreak: TimeSpan.FromSeconds(30)
-));
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 builder.Services.AddHttpClient("PaymentClient", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["PaymentApiUrl"] ?? "http://localhost:5002");
+    client.Timeout = TimeSpan.FromSeconds(5);
 })
-.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.CircuitBreakerAsync(
-    handledEventsAllowedBeforeBreaking: 3,
-    durationOfBreak: TimeSpan.FromSeconds(30)
-));
+.AddPolicyHandler((sp, _) => sp.GetRequiredService<CircuitBreakerMonitor>().Policy);
 
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new { service = "OrderApi", status = "Healthy" }));
 
-app.MapPost("/order", async (IHttpClientFactory clientFactory, ILogger<Program> logger) =>
+app.MapGet("/order/circuit-breaker", (CircuitBreakerMonitor monitor) =>
+    Results.Ok(monitor.GetSnapshot()));
+
+app.MapPost("/order/circuit-breaker/reset", (CircuitBreakerMonitor monitor, IConfiguration configuration) =>
+    configuration.GetValue<bool>("Demo:AllowCircuitBreakerReset")
+        ? ResetCircuitBreaker(monitor)
+        : Results.NotFound());
+
+app.MapPost("/order", async (
+    HttpContext context,
+    OrderProcessor processor,
+    IConfiguration configuration,
+    CancellationToken cancellationToken) =>
 {
-    logger.LogInformation("Processing order...");
-
-    var inventoryClient = clientFactory.CreateClient("InventoryClient");
-    var paymentClient = clientFactory.CreateClient("PaymentClient");
-
-    try
+    var idempotencyKey = context.Request.Headers["Idempotency-Key"].ToString();
+    if (string.IsNullOrWhiteSpace(idempotencyKey) || idempotencyKey.Length > 128)
     {
-        // Call Inventory API
-        logger.LogInformation("Calling Inventory API");
-        var inventoryResponse = await inventoryClient.PostAsync("/inventory/reserve", null);
-        inventoryResponse.EnsureSuccessStatusCode();
-
-        // Call Payment API
-        logger.LogInformation("Calling Payment API");
-        var paymentResponse = await paymentClient.PostAsync("/payment/process", null);
-        paymentResponse.EnsureSuccessStatusCode();
-
-        return Results.Ok(new { message = "Order processed successfully", orderId = Guid.NewGuid() });
+        return Results.Problem(
+            title: "invalid_idempotency_key",
+            detail: "Envie um cabeçalho Idempotency-Key com até 128 caracteres.",
+            statusCode: StatusCodes.Status400BadRequest);
     }
-    catch (Exception ex)
+
+    var simulatePaymentFailure = context.Request.Query["simulatePaymentFailure"] == "true";
+    if (simulatePaymentFailure && !configuration.GetValue<bool>("Demo:AllowFailureSimulation"))
     {
-        logger.LogError(ex, "Error processing order");
-        return Results.StatusCode(500);
+        return Results.NotFound();
     }
+
+    var result = await processor.ProcessAsync(idempotencyKey, simulatePaymentFailure, cancellationToken);
+    if (!result.Success)
+    {
+        return Results.Problem(
+            title: result.ErrorCode,
+            detail: result.Message,
+            statusCode: result.StatusCode);
+    }
+
+    return Results.Ok(new { message = result.Message, orderId = result.OrderId });
 });
 
 app.Run();
+
+static IResult ResetCircuitBreaker(CircuitBreakerMonitor monitor)
+{
+    monitor.Reset();
+    return Results.Ok(monitor.GetSnapshot());
+}

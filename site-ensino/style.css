@@ -127,6 +127,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+code {
+  overflow-wrap: anywhere;
+}
+
 /* Microsoft Color Ribbon no topo da página */
 .ms-color-ribbon {
   height: 4px;
@@ -155,6 +159,23 @@ body {
   transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 300;
+  padding: 0.65rem 1rem;
+  background: var(--bg-secondary);
+  color: var(--ms-blue);
+  border: 2px solid var(--ms-blue);
+  border-radius: var(--radius-sm);
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 body.dark-theme .top-nav {
   background-color: rgba(27, 28, 32, 0.92);
 }
@@ -166,6 +187,26 @@ body.dark-theme .top-nav {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 110;
+  display: none;
+  max-width: 100%;
+  padding: 0.4rem 0.65rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.search-results:not(:empty) {
+  display: block;
 }
 
 .brand {
@@ -315,7 +356,7 @@ body.dark-theme .top-nav {
   max-width: 1520px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 290px 1fr;
+  grid-template-columns: minmax(0, 290px) minmax(0, 1fr);
   gap: 2rem;
   padding: 2rem 1.75rem;
 }
@@ -461,6 +502,7 @@ body.dark-theme .top-nav {
   display: flex;
   flex-direction: column;
   gap: 2.2rem;
+  min-width: 0;
 }
 
 .section-card {
@@ -470,6 +512,8 @@ body.dark-theme .top-nav {
   padding: 2.25rem;
   box-shadow: var(--shadow-sm);
   position: relative;
+  min-width: 0;
+  scroll-margin-top: 6rem;
   transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -837,6 +881,7 @@ body.light-theme .hero-title {
    =================================================================== */
 .step-table-wrapper {
   margin-bottom: 2rem;
+  overflow-x: auto;
 }
 
 .table-title {
@@ -1229,6 +1274,18 @@ body.dark-theme .bar-track {
   box-shadow: 0 4px 8px rgba(0, 120, 212, 0.35);
 }
 
+.btn-icon:focus-visible,
+.btn-primary:focus-visible,
+.btn-outline:focus-visible,
+.btn-copy:focus-visible,
+.opt-btn:focus-visible,
+.nav-item:focus-visible,
+.btn-lab-quick:focus-visible,
+.toggle-control input:focus-visible + .toggle-slider {
+  outline: 3px solid var(--ms-blue);
+  outline-offset: 3px;
+}
+
 .btn-outline {
   background: transparent;
   color: var(--text-primary);
@@ -1272,6 +1329,10 @@ body.dark-theme .bar-track {
   font-size: 0.86rem;
 }
 
+.trace-info-header > div {
+  min-width: 0;
+}
+
 .code-tag {
   font-family: var(--font-mono);
   color: var(--ms-green-dark);
@@ -1279,6 +1340,7 @@ body.dark-theme .bar-track {
   padding: 0.15rem 0.5rem;
   border-radius: 3px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .trace-timeline-interactive {
@@ -1416,6 +1478,7 @@ body.dark-theme .span-bar-container {
 }
 
 .metric-item {
+  min-width: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xs);
@@ -1455,7 +1518,18 @@ body.dark-theme .span-bar-container {
   user-select: none;
 }
 
-.toggle-control input { display: none; }
+.toggle-control {
+  position: relative;
+}
+
+.toggle-control input {
+  position: absolute;
+  width: 44px;
+  height: 22px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
 
 .toggle-slider {
   width: 44px;
@@ -1758,7 +1832,7 @@ body.dark-theme .span-bar-container {
    =================================================================== */
 @media (max-width: 1024px) {
   .app-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   
   .sidebar {
@@ -1770,7 +1844,13 @@ body.dark-theme .span-bar-container {
   .problem-objective-grid,
   .dual-analogy-grid,
   .cb-dashboard {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .problem-objective-grid > *,
+  .dual-analogy-grid > *,
+  .cb-dashboard > * {
+    min-width: 0;
   }
 
   .jaeger-bar-row,
@@ -1780,12 +1860,88 @@ body.dark-theme .span-bar-container {
 }
 
 @media (max-width: 640px) {
-  .hero-title {
-    font-size: 1.85rem;
+  .top-nav {
+    padding: 0.75rem 1rem;
   }
-  
-  .section-card {
-    padding: 1.35rem;
+
+  .nav-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.65rem;
+  }
+
+  .search-box {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+  }
+
+  .nav-actions {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 0.5rem;
+  }
+
+  .btn-lab-quick {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .app-layout {
+    padding: 1rem 0.85rem;
+    gap: 1rem;
+  }
+
+  .content-area {
+    overflow-x: clip;
+  }
+
+  .sidebar {
+    padding: 1rem;
+  }
+
+  .sidebar-nav {
+    max-height: min(45vh, 24rem);
+  }
+
+  .section-card,
+  .simulator-card {
+    padding: 1rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.65rem, 8vw, 2rem);
+  }
+
+  .sim-header {
+    flex-wrap: wrap;
+  }
+
+  .sim-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cb-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .checklist-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .jaeger-bar-row,
@@ -1796,7 +1952,19 @@ body.dark-theme .span-bar-container {
 
   .jaeger-bar-row.indent-1,
   .jaeger-bar-row.indent-2,
-  .interactive-span-row.indent-1 {
+  .interactive-span-row.indent-1,
+  .interactive-span-row.indent-2 {
     padding-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

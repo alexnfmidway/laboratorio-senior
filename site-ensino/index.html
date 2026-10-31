@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Escola de Microsserviços para Iniciantes | Do Zero ao Sênior</title>
   <meta name="description" content="Aprenda Distributed Tracing, Jaeger, OpenTelemetry, Circuit Breaker, API Gateway, Saga e Outbox Pattern com analogias fáceis do dia a dia e passo a passo claro.">
+  <meta name="theme-color" content="#F3F5F9">
   
   <!-- Fontes Modernas -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,6 +18,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="light-theme">
+  <a href="#main-content" class="skip-link">Pular para o conteúdo</a>
   <!-- Fita de Cores Microsoft Fluent -->
   <div class="ms-color-ribbon"></div>
 
@@ -38,11 +40,12 @@
       
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" id="module-search" placeholder="Buscar conceito (ex: Jaeger, Polly, Saga, Outbox, k6)..." aria-label="Buscar conceitos">
+        <input type="search" id="module-search" placeholder="Buscar conceito (ex: Jaeger, Polly, Saga, Outbox, k6)..." aria-label="Buscar conceitos">
+        <span id="search-results" class="search-results" role="status" aria-live="polite"></span>
       </div>
 
       <div class="nav-actions">
-        <button id="theme-toggle" class="btn-icon" title="Alternar Modo Claro/Escuro" aria-label="Alternar tema">
+        <button id="theme-toggle" class="btn-icon" title="Alternar para Modo Escuro" aria-label="Alternar para Modo Escuro" aria-pressed="false">
           <span id="theme-icon">🌙</span>
         </button>
         <a href="#simulador-jaeger" class="btn-lab-quick">⚡ Ver Trace Interativo</a>
@@ -56,14 +59,14 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <h3>📚 Trilha de Estudos</h3>
-        <p class="progress-label">Seu progresso: <span id="progress-percent">0%</span></p>
+        <p class="progress-label">Leitura da página: <span id="progress-percent">0%</span></p>
         <div class="progress-bar-container">
-          <div class="progress-bar" id="progress-bar-fill"></div>
+          <div class="progress-bar" id="progress-bar-fill" role="progressbar" aria-label="Leitura da página" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <a href="#intro" class="nav-item active" data-target="intro">
+      <nav class="sidebar-nav" aria-label="Navegação da trilha">
+        <a href="#intro" class="nav-item active" data-target="intro" aria-current="location">
           <span class="step-badge">0</span>
           <span>Visão Geral da Arquitetura</span>
         </a>
@@ -114,7 +117,7 @@
     </aside>
 
     <!-- Área Principal de Conteúdo -->
-    <main class="content-area">
+    <main class="content-area" id="main-content">
       
       <!-- HERO SECTION -->
       <section id="intro" class="section-card hero-section">
@@ -132,12 +135,12 @@
             <span class="stat-text">APIs Integradas (Gateway YARP, Order, Inventory, Payment)</span>
           </div>
           <div class="stat-card">
-            <span class="stat-number">100%</span>
-            <span class="stat-text">Rastreabilidade ponta a ponta com Jaeger</span>
+            <span class="stat-number">4</span>
+            <span class="stat-text">Serviços instrumentados com OpenTelemetry</span>
           </div>
           <div class="stat-card">
-            <span class="stat-number">~254ms</span>
-            <span class="stat-text">Tempo total medido do pedido no trace</span>
+            <span class="stat-number">250ms</span>
+            <span class="stat-text">Atrasos simulados (100ms estoque + 150ms pagamento)</span>
           </div>
           <div class="stat-card">
             <span class="stat-number">7</span>
@@ -248,8 +251,8 @@
             <tbody>
               <tr>
                 <td><strong>1</strong></td>
-                <td>O usuário faz uma requisição HTTP para a <code>OrderApi</code> (ex: <code>POST /order</code>).</td>
-                <td>É a porta de entrada onde a intenção de compra começa.</td>
+                <td>O usuário faz <code>POST /order</code> pelo <code>GatewayApi</code>; a requisição inclui <code>Idempotency-Key</code>.</td>
+                <td>O Gateway é a entrada pública e encaminha a chamada para a OrderApi.</td>
               </tr>
               <tr>
                 <td><strong>2</strong></td>
@@ -258,18 +261,18 @@
               </tr>
               <tr>
                 <td><strong>3</strong></td>
-                <td>A <code>OrderApi</code> chama a <code>InventoryApi</code> enviando esse <code>Trace ID</code> no cabeçalho <code>traceparent</code> (padrão W3C).</td>
+                <td>A <code>OrderApi</code> chama <code>POST /inventory/reserve</code> e depois <code>POST /payment/process</code>, propagando o <code>traceparent</code>.</td>
                 <td>Para que a segunda API saiba que não é uma chamada solta, e sim parte daquele mesmo pedido.</td>
               </tr>
               <tr>
                 <td><strong>4</strong></td>
-                <td>A <code>InventoryApi</code> mede seu próprio tempo de execução (~98ms) e cria um <code>Span</code> filho.</td>
-                <td>Registra com precisão quanto tempo o estoque demorou para checar os itens.</td>
+                <td>A <code>InventoryApi</code> simula a reserva com um atraso de 100ms e responde com um <code>reservationId</code>.</td>
+                <td>Esse identificador permite à OrderApi desfazer a reserva se o pagamento falhar.</td>
               </tr>
               <tr>
                 <td><strong>5</strong></td>
-                <td>A <code>OrderApi</code> em seguida chama a <code>PaymentApi</code> com o mesmo <code>Trace ID</code>, que cria outro <code>Span</code> filho (~151ms).</td>
-                <td>Registra o tempo que a cobrança no cartão levou para aprovar.</td>
+                <td>A <code>OrderApi</code> chama a <code>PaymentApi</code> com o mesmo <code>Trace ID</code>; a chamada tem um Circuit Breaker.</td>
+                <td>O pagamento é processado depois da reserva. Em caso de falha, a saga tenta liberar o estoque.</td>
               </tr>
               <tr>
                 <td><strong>6</strong></td>
@@ -295,28 +298,30 @@
 sequenceDiagram
     autonumber
     actor Cliente as 👤 Cliente / App
+    participant Gateway as 🚪 GatewayApi (YARP)
     participant Order as 🛒 OrderApi
     participant Inv as 📦 InventoryApi
     participant Pay as 💳 PaymentApi
     participant Jaeger as 🔍 Jaeger Collector
 
-    Cliente->>Order: POST /order (Início do Pedido)
-    Note over Order: Gera Trace ID: 4bf92f...<br/>Cria Span Raiz (Order)
+    Cliente->>Gateway: POST /order + Idempotency-Key
+    Gateway->>Order: Encaminha POST /order
+    Note over Gateway,Order: OpenTelemetry propaga Trace ID via traceparent
     
-    Order->>Inv: GET /inventory (Header: traceparent=4bf92f...)
-    Note over Inv: Processa estoque (~98ms)<br/>Cria Span Filho (Inventory)
-    Inv-->>Order: 200 OK (Estoque Confirmado)
+    Order->>Inv: POST /inventory/reserve
+    Note over Inv: Reserva de demonstração (100ms)
+    Inv-->>Order: 200 + reservationId
     Inv--)Jaeger: Envia Span via OTLP gRPC (4317)
     
-    Order->>Pay: GET /payment (Header: traceparent=4bf92f...)
-    Note over Pay: Processa cartão (~151ms)<br/>Cria Span Filho (Payment)
-    Pay-->>Order: 200 OK (Pagamento Aprovado)
+    Order->>Pay: POST /payment/process (Circuit Breaker)
+    Note over Pay: Processamento simulado (150ms)
+    Pay-->>Order: 200 OK ou falha simulada 503
     Pay--)Jaeger: Envia Span via OTLP gRPC (4317)
     
-    Order-->>Cliente: 200 OK { status: "Order Processed" }
+    Order-->>Gateway: Resposta do pedido
+    Gateway-->>Cliente: Resposta HTTP
     Order--)Jaeger: Envia Span Raiz via OTLP gRPC (4317)
-    
-    Note over Jaeger: Monta árvore visual completa<br/>Tempo Total: ~254ms
+    Note over Jaeger: Monta os spans relacionados da requisição
           </div>
         </div>
 
@@ -353,14 +358,14 @@ builder.Services.AddOpenTelemetry()
         <!-- Demonstração Visual Baseada no Laboratório Real -->
         <div class="live-preview-box">
           <div class="preview-header">
-            <h4>👁️ Visualização Real do Trace que Testamos no Jaeger</h4>
-            <span class="badge-tag green">Verificado no Docker Compose</span>
+            <h4>👁️ Exemplo Ilustrativo de um Trace</h4>
+            <span class="badge-tag">Tempos e spans são exemplos</span>
           </div>
           <div class="jaeger-mockup">
             <div class="jaeger-bar-row">
               <div class="service-name">
                 <span class="color-dot order"></span>
-                <strong>orderapi</strong>: GET /order
+                <strong>gatewayapi</strong>: POST /order
               </div>
               <div class="bar-track">
                 <div class="bar-fill order-fill" style="width: 100%;">254 ms (Span Raiz)</div>
@@ -370,7 +375,7 @@ builder.Services.AddOpenTelemetry()
             <div class="jaeger-bar-row indent-1">
               <div class="service-name">
                 <span class="color-dot order"></span>
-                <span>orderapi</span>: client GET inventory
+                <span>orderapi</span>: POST inventory/reserve
               </div>
               <div class="bar-track">
                 <div class="bar-fill client-inv" style="left: 2%; width: 40%;">101 ms</div>
@@ -380,7 +385,7 @@ builder.Services.AddOpenTelemetry()
             <div class="jaeger-bar-row indent-2">
               <div class="service-name">
                 <span class="color-dot inv"></span>
-                <strong>inventoryapi</strong>: server GET /inventory
+                <strong>inventoryapi</strong>: POST /inventory/reserve
               </div>
               <div class="bar-track">
                 <div class="bar-fill inv-fill" style="left: 3%; width: 38%;">98.4 ms (Delay de verificação)</div>
@@ -390,7 +395,7 @@ builder.Services.AddOpenTelemetry()
             <div class="jaeger-bar-row indent-1">
               <div class="service-name">
                 <span class="color-dot order"></span>
-                <span>orderapi</span>: client GET payment
+                <span>orderapi</span>: client POST payment/process
               </div>
               <div class="bar-track">
                 <div class="bar-fill client-pay" style="left: 42%; width: 57%;">153 ms</div>
@@ -400,7 +405,7 @@ builder.Services.AddOpenTelemetry()
             <div class="jaeger-bar-row indent-2">
               <div class="service-name">
                 <span class="color-dot pay"></span>
-                <strong>paymentapi</strong>: server GET /payment
+                <strong>paymentapi</strong>: server POST /payment/process
               </div>
               <div class="bar-track">
                 <div class="bar-fill pay-fill" style="left: 43%; width: 55%;">151.2 ms (Processamento do cartão)</div>
@@ -408,7 +413,7 @@ builder.Services.AddOpenTelemetry()
             </div>
           </div>
           <p class="mockup-caption">
-            💡 <em>Olhando essa barra, qualquer estagiário ou diretor sabe responder: "Onde o sistema gasta mais tempo?" Resposta: Na PaymentApi (151ms)!</em>
+            💡 <em>Neste exemplo ilustrativo, o pagamento é a etapa mais demorada. Use os traces do seu ambiente para identificar o gargalo real.</em>
           </p>
         </div>
 
@@ -581,8 +586,15 @@ flowchart TD
               Instalar um <strong>"disjuntor inteligente"</strong> (usando a biblioteca Polly no .NET).
             </p>
             <p class="sub-alert">
-              Se a <code>PaymentApi</code> falhar 3 vezes seguidas, o disjuntor "desarma" (<strong>Open</strong>). As próximas chamadas nem saem da máquina: elas falham instantaneamente em 0 milissegundos com uma mensagem amigável, poupando recursos até o serviço se recuperar.
+              A <code>OrderApi</code> protege a chamada à <code>PaymentApi</code> com Polly: por padrão, 3 respostas transitórias (5xx/408) ou timeouts abrem o circuito por 30 segundos. A política e esses limites são configurados no backend.
             </p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔌</div>
+          <div class="callout-body">
+            <strong>Implementação real:</strong> o botão “Simular Falha” do laboratório Blazor envia um pedido pela API; em Development e no Docker Compose, a PaymentApi devolve 503 de demonstração. O pedido desfaz a reserva de estoque. Com o circuito aberto, a chamada de pagamento é rejeitada pela Polly, mas a saga ainda precisa chamar o estoque para compensar — portanto, o pedido completo não leva 0ms. A página estática abaixo é apenas um simulador visual independente.
           </div>
         </div>
 
@@ -598,7 +610,7 @@ flowchart TD
           <div class="infographic-caption">
             <strong>👁️ Entendendo a imagem num piscar de olhos:</strong>
             <br>• <strong>1. CLOSED STATE (Luz Verde):</strong> O sistema está saudável. O tráfego elétrico flui livremente do Serviço A para o Serviço B.
-            <br>• <strong>2. OPEN STATE (Chave Vermelha Desarmada):</strong> O Serviço B começou a falhar ou pegar fogo. O disjuntor desarma na hora e coloca um <strong>escudo de proteção</strong>, bloqueando chamadas em 0ms para não queimar o cliente!
+            <br>• <strong>2. OPEN STATE (Chave Vermelha Desarmada):</strong> O serviço de destino começou a falhar. O disjuntor rejeita novas chamadas àquele serviço sem repetir a tentativa de rede.
             <br>• <strong>3. HALF-OPEN STATE (Luz Amarela de Teste):</strong> Após um tempo de descanso (cooldown), o disjuntor deixa passar <strong>um único pulso cauteloso</strong>. Se o serviço responder bem, a chave volta para o verde; se falhar, volta para o vermelho!
           </div>
         </div>
@@ -616,7 +628,7 @@ flowchart TD
             <ul>
               <li>Se você ligar o chuveiro, a air fryer e o ferro de passar na mesma tomada e houver uma sobrecarga elétrica, o disjuntor faz <em>"CLACK!"</em> e desliga a energia daquele cômodo na hora.</li>
               <li><strong>Por que ele faz isso?</strong> Para impedir que os fios dentro da parede esquentem até pegar fogo e queimar a casa inteira!</li>
-              <li>Em software, o <strong>Circuit Breaker</strong> faz exatamente isso: ele "desarma" a conexão com o serviço doente para não deixar o servidor inteiro queimar por falta de memória!</li>
+              <li>Em software, o <strong>Circuit Breaker</strong> protege uma dependência específica. No projeto, ele protege a chamada da <code>OrderApi</code> para a <code>PaymentApi</code>; outras etapas do pedido, como compensar estoque, ainda podem fazer chamadas HTTP.</li>
             </ul>
           </div>
         </div>
@@ -643,13 +655,13 @@ flowchart TD
               </tr>
               <tr>
                 <td><strong class="state-open">🔴 ABERTO (Open)</strong></td>
-                <td>O disjuntor detectou muitas falhas (ex: 3 consecutivas). <strong>Nenhuma requisição passa!</strong> Elas falham de imediato sem sequer tentar chamar a rede.</td>
-                <td>Para não estressar o serviço que já está caído e evitar que a sua própria API fique com conexões presas na memória.</td>
+                <td>Chamadas à PaymentApi são rejeitadas pela política enquanto o intervalo configurado não termina.</td>
+                <td>Evita novas tentativas de rede ao serviço de pagamento. Na saga deste projeto, a OrderApi ainda libera a reserva de estoque.</td>
               </tr>
               <tr>
                 <td><strong class="state-half">🟡 MEIO-ABERTO (Half-Open)</strong></td>
-                <td>Depois de um tempo de espera (ex: 30 segundos), o disjuntor deixa passar <strong>apenas uma requisição de teste</strong>.</td>
-                <td>Para conferir se o serviço já voltou à vida. Se essa requisição tiver sucesso, o disjuntor volta para 🟢 FECHADO. Se falhar, ele volta para 🔴 ABERTO por mais 30s.</td>
+                <td>Após o intervalo, Polly permite uma chamada de prova à PaymentApi.</td>
+                <td>Uma resposta bem-sucedida fecha o circuito; uma falha transitória abre-o novamente pelo período configurado.</td>
               </tr>
             </tbody>
           </table>
@@ -665,11 +677,11 @@ flowchart TD
 stateDiagram-v2
     [*] --> Fechado
     
-    Fechado --> Aberto: 3 falhas consecutivas (Erros 500 / Timeouts)
+    Fechado --> Aberto: 3 falhas transitórias (padrão)
     note right of Fechado: 🟢 Requisições passam normal
     
-    Aberto --> MeioAberto: Após tempo de espera (ex: 30 segundos)
-    note right of Aberto: 🔴 Bloqueio total instantâneo (0ms)
+    Aberto --> MeioAberto: Após 30 segundos (padrão)
+    note right of Aberto: 🔴 Novas chamadas à PaymentApi são rejeitadas
     
     MeioAberto --> Fechado: Requisição de teste teve SUCESSO!
     MeioAberto --> Aberto: Requisição de teste FALHOU de novo!
@@ -683,19 +695,17 @@ stateDiagram-v2
             <span>💻 Como configuramos no .NET com Polly</span>
             <span class="lang-tag">C# / Polly</span>
           </div>
-          <pre><code>// Adiciona política de Circuit Breaker ao HttpClient do Pedido
-builder.Services.AddHttpClient("payment-client", client =>
-{
-    client.BaseAddress = new Uri("http://paymentapi:8080");
-})
-.AddTransientHttpErrorPolicy(policy =>
-    policy.CircuitBreakerAsync(
-        handledEventsAllowedBeforeBreaking: 3,       // Se falhar 3 vezes seguidas...
-        durationOfBreak: TimeSpan.FromSeconds(30),   // ...fica ABERTO por 30 segundos
-        onBreak: (outcome, timespan) => Console.WriteLine("⚠️ Disjuntor DESARMOU! Bloqueando chamadas."),
-        onReset: () => Console.WriteLine("✅ Disjuntor FECHOU! Serviço voltou ao normal.")
-    )
-);</code></pre>
+          <pre><code>          // A política real protege somente as chamadas da OrderApi para PaymentApi.
+          builder.Services.AddHttpClient("PaymentClient", client =>
+          {
+              client.BaseAddress = new Uri("http://paymentapi:8080");
+          })
+          .AddPolicyHandler((services, _) =>
+              services.GetRequiredService&lt;CircuitBreakerMonitor&gt;().Policy);
+
+          // Os padrões são 3 falhas transitórias e 30 segundos.
+          // CircuitBreaker:FailureThreshold e CircuitBreaker:BreakDurationSeconds
+          // podem substituir esses valores.</code></pre>
         </div>
 
       </section>
@@ -711,8 +721,7 @@ builder.Services.AddHttpClient("payment-client", client =>
         <div class="callout callout-info" style="margin-bottom: 1.5rem;">
           <div class="callout-icon">🚀</div>
           <div class="callout-body">
-            <strong>Status da Implementação:</strong> Este módulo agora está <strong>100% implementado e ativo no laboratório real!</strong> 
-            Criamos o projeto <code>GatewayApi</code> usando o <strong>Microsoft YARP (Yet Another Reverse Proxy)</strong>, trancamos as portas das APIs internas na rede privada do Docker e configuramos o rastreamento distribuído no Jaeger com o Gateway como nó raiz.
+            <strong>Status da Implementação:</strong> O projeto usa <strong>YARP</strong> para encaminhar <code>/order</code> à OrderApi; as APIs internas não publicam portas no host. O Compose publica o Gateway na porta 5000. O YARP deste laboratório não implementa autenticação: use esta configuração apenas em ambiente controlado e não exponha endpoints de demonstração em produção.
           </div>
         </div>
 
@@ -736,7 +745,7 @@ builder.Services.AddHttpClient("payment-client", client =>
               Resolvemos esses problemas dividindo as responsabilidades em duas peças mestras:
             </p>
             <ul>
-              <li><strong>1. API Gateway (Microsoft YARP na porta 5000):</strong> Uma portaria única e blindada. O mundo exterior só conhece a porta 5000. Todas as outras APIs internas têm suas portas trancadas dentro de uma rede privada. O Gateway recebe a requisição, gera o trace, e roteia para o serviço certo internamente.</li>
+              <li><strong>1. API Gateway (Microsoft YARP na porta 5000):</strong> Um único ponto de entrada do laboratório local. As APIs internas não têm portas publicadas no host; YARP encaminha <code>/order</code> para OrderApi.</li>
               <li><strong>2. Service Discovery (DNS interno do Docker):</strong> Os serviços conversam usando nomes lógicos amigáveis (ex: <code>http://inventoryapi:8080</code> e <code>http://paymentapi:8080</code>). O servidor DNS do Docker intercepta o nome e resolve dinamicamente o IP do container em milissegundos!</li>
             </ul>
           </div>
@@ -754,8 +763,8 @@ builder.Services.AddHttpClient("payment-client", client =>
           <div class="infographic-caption">
             <strong>👁️ Entendendo a arquitetura num piscar de olhos:</strong>
             <br>1. <strong>📱 O Cliente Externo (Mobile/Web):</strong> Só conhece uma única porta: <code>http://localhost:5000</code>. Ele nunca fala direto com o banco, estoque ou pagamento.
-            <br>2. <strong>🚪 O API Gateway (Microsoft YARP):</strong> Fica na portaria da fortaleza. Ele valida cabeçalhos, inicia o <code>Trace ID</code> no OpenTelemetry e sabe exatamente para onde direcionar cada rota (ex: <code>/order</code> ➜ <code>orderapi</code>).
-            <br>3. <strong>🛡️ Escudo da Rede Privada Docker:</strong> As portas das APIs internas (5001 e 5002) foram <strong>totalmente removidas do docker-compose</strong>. Ninguém de fora da máquina consegue acessá-las diretamente!
+            <br>2. <strong>🚪 O API Gateway (Microsoft YARP):</strong> Encaminha <code>/order</code> para a <code>OrderApi</code>. O OpenTelemetry instrumenta as requisições; YARP não implementa autenticação neste laboratório.
+            <br>3. <strong>🛡️ Rede Docker:</strong> As APIs internas não têm portas publicadas no host. Em Docker Compose, contêineres na mesma rede ainda podem se comunicar; isso não substitui autenticação, firewall ou controles de produção.
             <br>4. <strong>🤖 Robô de Service Discovery (Docker DNS):</strong> Quando a <code>OrderApi</code> precisa falar com a <code>InventoryApi</code>, ela não sabe o IP. Ela pergunta para o robô DNS: <em>"Cadê o container inventoryapi?"</em>, e o Docker responde com o IP correto na hora!
           </div>
         </div>
@@ -851,10 +860,10 @@ builder.Services.AddHttpClient("payment-client", client =>
           <div class="callout callout-success" style="margin-top: 1rem;">
             <div class="callout-icon">✨</div>
             <div class="callout-body">
-              <strong>O que implementamos para resolver isso definitivamente:</strong>
+              <strong>O que o laboratório implementa:</strong>
               <br>1. Criamos o microsserviço <strong>GatewayApi</strong> usando a biblioteca oficial da Microsoft <strong>YARP (Yet Another Reverse Proxy)</strong>.
               <br>2. Configuramos o YARP para ouvir na porta <strong>5000</strong> e rotear internamente: qualquer requisição para <code>/order</code> é encaminhada automaticamente para <code>http://orderapi:8080</code>.
-              <br>3. <strong>Fechamos e deletamos as portas externas</strong> da <code>orderapi</code>, <code>inventoryapi</code> e <code>paymentapi</code> no <code>docker-compose.yml</code>! Elas agora operam 100% isoladas na rede interna do Docker.
+              <br>3. As APIs internas não publicam portas no host no <code>docker-compose.yml</code>. Outros contêineres na rede ainda podem acessá-las; isso não substitui autenticação nem controles de produção.
               <br>4. Plugamos o <strong>OpenTelemetry</strong> no Gateway! Agora, quando você abre o <strong>Jaeger</strong>, o <code>gatewayapi</code> aparece orgulhosamente como o <strong>primeiro nó (Root Span)</strong> de toda a cadeia de execução!
             </div>
           </div>
@@ -878,7 +887,7 @@ builder.Services.AddHttpClient("payment-client", client =>
               <tr>
                 <td><strong>Portas Expostas</strong></td>
                 <td><span class="badge-tag red">❌ Inseguro</span> Portas 5000, 5001 e 5002 abertas direto no Windows.</td>
-                <td><span class="badge-tag green">✅ Seguro</span> Apenas a porta 5000 (Gateway). APIs internas sem nenhuma porta pública!</td>
+                <td><span class="badge-tag green">✅ Menor superfície exposta</span> Porta 5000 do Gateway publicada; APIs internas sem portas publicadas no host.</td>
               </tr>
               <tr>
                 <td><strong>Ponto de Entrada</strong></td>
@@ -888,7 +897,7 @@ builder.Services.AddHttpClient("payment-client", client =>
               <tr>
                 <td><strong>Segurança de Pagamento</strong></td>
                 <td>Qualquer um podia chamar <code>localhost:5002/payment</code> e forjar pagamentos.</td>
-                <td>Se você tentar chamar <code>localhost:5002</code>, a conexão é <strong>recusada imediatamente</strong>!</td>
+                <td>As APIs internas não têm portas mapeadas no host deste Compose. Isso reduz a exposição, mas não impede chamadas de outros contêineres.</td>
               </tr>
               <tr>
                 <td><strong>Rastreamento Jaeger</strong></td>
@@ -941,7 +950,7 @@ builder.Services.AddHttpClient("payment-client", client =>
               </tr>
               <tr>
                 <td><strong>5</strong></td>
-                <td>A <code>OrderApi</code> recebe o pedido e precisa checar estoque. Ela chama <code>http://inventoryapi:8080/inventory</code>.</td>
+                <td>A <code>OrderApi</code> valida a chave <code>Idempotency-Key</code> e reserva estoque em <code>POST /inventory/reserve</code>.</td>
                 <td>A OrderApi não tem nenhum IP fixo; ela usa o nome lógico definido no Service Discovery.</td>
               </tr>
               <tr>
@@ -951,8 +960,13 @@ builder.Services.AddHttpClient("payment-client", client =>
               </tr>
               <tr>
                 <td><strong>7</strong></td>
-                <td>A <code>OrderApi</code> repete o processo chamando <code>http://paymentapi:8080/payment</code>, processa o pedido e responde 200 OK para o Gateway, que devolve o JSON final ao cliente.</td>
-                <td>O ciclo é concluído com sucesso, segurança de 100% e rastreabilidade total no Jaeger!</td>
+                <td>Com a reserva, a <code>OrderApi</code> chama <code>POST /payment/process</code> protegida pelo Circuit Breaker da Polly.</td>
+                <td>O pagamento só é chamado após o estoque confirmar a reserva.</td>
+              </tr>
+              <tr>
+                <td><strong>8</strong></td>
+                <td>Se o pagamento falhar, a OrderApi chama <code>POST /inventory/release/{reservationId}</code>; no sucesso, responde com o identificador do pedido.</td>
+                <td>A compensação evita manter a reserva após uma falha de pagamento. A chave de idempotência é armazenada em memória por 10 minutos.</td>
               </tr>
             </tbody>
           </table>
@@ -982,12 +996,13 @@ flowchart TD
 
         O -->|3. Pergunta 'Onde fica inventoryapi?'| DNS
         DNS -->|Resolve IP dinâmico| O
-        O -->|4. GET /inventory| I["📦 InventoryApi (porta 8080 interna)"]
+        O -->|4. POST /inventory/reserve| I["📦 InventoryApi (porta 8080 interna)"]
+        O -.->|Falha no pagamento: POST /inventory/release/:id| I
         I -.->|Exporta Spans| JAEGER
 
         O -->|5. Pergunta 'Onde fica paymentapi?'| DNS
         DNS -->|Resolve IP dinâmico| O
-        O -->|6. GET /payment| P["💳 PaymentApi (porta 8080 interna)"]
+        O -->|6. POST /payment/process| P["💳 PaymentApi (porta 8080 interna)"]
         P -.->|Exporta Spans| JAEGER
     end
 
@@ -1155,14 +1170,23 @@ app.Run();</code></pre>
             <div class="command-text"># 1. Teste o status de saúde do API Gateway na porta 5000:
 Invoke-RestMethod -Uri "http://localhost:5000/gateway/health"
 
-# 2. Crie um pedido chamando o Gateway (ele roteia para OrderApi, que chama Inventory e Payment):
-Invoke-RestMethod -Uri "http://localhost:5000/order" -Method Post
+# 2. Crie um pedido idempotente (use uma chave nova por operação):
+$headers = @{ "Idempotency-Key" = [guid]::NewGuid().ToString("N") }
+Invoke-RestMethod -Uri "http://localhost:5000/order" -Method Post -Headers $headers
 
-# 3. TESTE DE BLINDAGEM: Tente chamar a InventoryApi ou PaymentApi diretamente:
-# (O comando vai FALHAR com erro de conexão, provando que a porta está 100% protegida!)
-Invoke-RestMethod -Uri "http://localhost:5001/inventory"
+# 3. Consulte o estado real do Circuit Breaker:
+Invoke-RestMethod -Uri "http://localhost:5000/order/circuit-breaker"
 
-# 4. Abra o Jaeger no navegador e veja a árvore completa começando em "gatewayapi":
+# 4. No ambiente Development/Compose, simule falha de pagamento com outra chave:
+$failureHeaders = @{ "Idempotency-Key" = [guid]::NewGuid().ToString("N") }
+Invoke-RestMethod -Uri "http://localhost:5000/order?simulatePaymentFailure=true" -Method Post -Headers $failureHeaders
+
+# 5. TESTE DE BLINDAGEM: tente chamar a InventoryApi ou PaymentApi diretamente:
+# (A chamada não é publicada pelo Compose no host; isso não substitui autenticação
+# nem impede outros contêineres da rede interna de acessar o serviço.)
+Invoke-RestMethod -Uri "http://localhost:5001/inventory/reserve" -Method Post
+
+# 6. Abra o Jaeger no navegador:
 http://localhost:16686</div>
             <button class="btn-copy">📋 Copiar Comandos</button>
           </div>
@@ -1176,6 +1200,13 @@ http://localhost:16686</div>
           <div class="module-number">MÓDULO 5</div>
           <h2>Saga Pattern: Transações Distribuídas</h2>
           <p class="module-subtitle">Como cancelar e desfazer etapas anteriores quando algo dá errado no meio do caminho.</p>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧪</div>
+          <div class="callout-body">
+            <strong>O que este repositório implementa:</strong> a OrderApi orquestra uma reserva de estoque seguida de pagamento. Se o pagamento falhar ou o Circuit Breaker estiver aberto, envia uma compensação para liberar a reserva. Para manter o exemplo simples, as reservas e os resultados de pedidos bem-sucedidos com idempotência ficam apenas na memória por 10 minutos; não há banco, cobrança persistida nem garantia de recuperação após reiniciar o processo. Falhas durante a própria compensação são registradas como erro crítico.
+          </div>
         </div>
 
         <div class="problem-objective-grid">
@@ -1217,7 +1248,7 @@ http://localhost:16686</div>
               <li>A agência tenta reservar o <strong>Aluguel do Carro</strong> (Ops! Não tem mais carros disponíveis!).</li>
             </ol>
             <p class="analogy-footer-note">
-              A agência não vai te mandar para Paris sem hotel e sem carro deixando tudo pela metade. Ela imediatamente executa a <strong>compensação</strong>: cancela a reserva do hotel e cancela a passagem aérea, estornando seu dinheiro integralmente.
+              A agência não vai te mandar para Paris sem hotel e sem carro deixando tudo pela metade. Ela executa ações de <strong>compensação</strong>. Em um sistema real, cada etapa precisa definir como desfazer seus efeitos; algumas compensações podem falhar e exigir reconciliação.
             </p>
           </div>
         </div>
@@ -1511,8 +1542,8 @@ flowchart TD
               </tr>
               <tr>
                 <td><strong>5</strong></td>
-                <td>O k6 encerra e imprime na tela: <code>http_req_duration: p(95)=270ms</code> e <code>http_req_failed: 0.00%</code>.</td>
-                <td>Mede se o sistema manteve estabilidade e zero erros sob estresse contínuo.</td>
+                <td>O k6 apresenta a duração e a taxa de falhas observadas naquela execução.</td>
+                <td>Os resultados dependem da máquina e da execução; não são valores fixos nem uma garantia de zero erros.</td>
               </tr>
               <tr>
                 <td><strong>6</strong></td>
@@ -1538,8 +1569,12 @@ export const options = {
 };
 
 export default function () {
-  // Dispara POST para o endpoint que orquestra os 3 microsserviços
-  const res = http.post('http://host.docker.internal:5000/order');
+  // Use uma chave diferente para cada pedido, inclusive entre VUs e iterações.
+  const res = http.post('http://host.docker.internal:5000/order', null, {
+    headers: {
+      'Idempotency-Key': `loadtest-${__VU}-${__ITER}`,
+    },
+  });
   
   // Valida se o status retornado foi 200 OK
   check(res, {
@@ -1738,14 +1773,15 @@ dotnet add PaymentApi package OpenTelemetry.Exporter.OpenTelemetryProtocol</div>
           <span class="step-header-tag">Passo 4: Código C#</span>
           <h3>3. Programando a InventoryApi (InventoryApi/Program.cs)</h3>
           <p class="tutorial-step-desc">
-            A InventoryApi simula a verificação de estoque com um delay de 100ms e exporta seus dados para o Jaeger:
+            A InventoryApi mantém reservas de demonstração em memória, devolve um identificador para a OrderApi e aceita a compensação:
           </p>
           <div class="code-spotlight">
             <div class="code-header">
               <span>InventoryApi/Program.cs</span>
               <button class="btn-copy">📋 Copiar Código</button>
             </div>
-            <pre><code>using OpenTelemetry.Resources;
+            <pre><code>using System.Collections.Concurrent;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -1761,12 +1797,21 @@ builder.Services.AddOpenTelemetry()
     });
 
 var app = builder.Build();
+var reservations = new ConcurrentDictionary&lt;Guid, byte&gt;();
 
-// Endpoint de Estoque com delay simulado de 100ms
-app.MapGet("/inventory", async () =>
+app.MapPost("/inventory/reserve", async () =>
 {
     await Task.Delay(100);
-    return Results.Ok(new { status = "In Stock", checkedAt = DateTime.UtcNow });
+    var reservationId = Guid.NewGuid();
+    reservations.TryAdd(reservationId, 0);
+    return Results.Ok(new { reservationId, message = "Inventory reserved" });
+});
+
+app.MapPost("/inventory/release/{reservationId:guid}", (Guid reservationId) =>
+{
+    return reservations.TryRemove(reservationId, out _)
+        ? Results.NoContent()
+        : Results.NotFound();
 });
 
 app.Run();</code></pre>
@@ -1777,7 +1822,7 @@ app.Run();</code></pre>
           <span class="step-header-tag">Passo 5: Código C#</span>
           <h3>4. Programando a PaymentApi (PaymentApi/Program.cs)</h3>
           <p class="tutorial-step-desc">
-            A PaymentApi simula o processamento do cartão de crédito com um delay de 150ms:
+            A PaymentApi simula o processamento com delay de 150ms e pode devolver HTTP 503 para o laboratório quando a flag de demonstração estiver habilitada:
           </p>
           <div class="code-spotlight">
             <div class="code-header">
@@ -1800,9 +1845,17 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
-// Endpoint de Pagamento com delay simulado de 150ms
-app.MapGet("/payment", async () =>
+app.MapPost("/payment/process", async (HttpContext context, IConfiguration configuration) =>
 {
+    if (context.Request.Query["simulateFailure"] == "true" &&
+        configuration.GetValue&lt;bool&gt;("Demo:AllowFailureSimulation"))
+    {
+        return Results.Problem(
+            title: "simulated_payment_failure",
+            detail: "Falha de pagamento simulada para demonstrar o Circuit Breaker.",
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
     await Task.Delay(150);
     return Results.Ok(new { status = "Payment Approved", transactionId = Guid.NewGuid() });
 });
@@ -1815,72 +1868,34 @@ app.Run();</code></pre>
           <span class="step-header-tag">Passo 6: Orquestração e Resiliência</span>
           <h3>5. Programando a OrderApi com Polly Circuit Breaker (OrderApi/Program.cs)</h3>
           <p class="tutorial-step-desc">
-            A OrderApi recebe a compra do cliente, chama Inventory e Payment com rastreamento automático e protege a chamada de pagamento com o Circuit Breaker:
+          No projeto, a configuração registra o monitor Polly e um orquestrador de pedidos. O fluxo exige uma chave de idempotência, reserva estoque, processa pagamento e libera a reserva se houver falha:
           </p>
           <div class="code-spotlight">
             <div class="code-header">
               <span>OrderApi/Program.cs</span>
               <button class="btn-copy">📋 Copiar Código</button>
             </div>
-            <pre><code>using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Polly;
+            <pre><code>// OrderApi/Program.cs — trecho de registro dos serviços
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton&lt;CircuitBreakerMonitor&gt;();
+builder.Services.AddScoped&lt;OrderProcessor&gt;();
 
-var builder = WebApplication.CreateBuilder(args);
-
-// 1. Configura OpenTelemetry (Captura requisições recebidas E enviadas via HttpClient)
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(r => r.AddService("orderapi"))
-    .WithTracing(tracing =>
-    {
-        tracing
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation() // Injeta o Trace ID no cabeçalho W3C
-            .AddOtlpExporter(opt => opt.Endpoint = new Uri("http://jaeger:4317"));
-    });
-
-// 2. HttpClient para InventoryApi
-builder.Services.AddHttpClient("inventory", client =>
+builder.Services.AddHttpClient("InventoryClient", client =&gt;
 {
-    client.BaseAddress = new Uri("http://inventoryapi:8080");
+    client.BaseAddress = new Uri(inventoryApiUrl);
 });
 
-// 3. HttpClient para PaymentApi protegido com Circuit Breaker da Polly
-builder.Services.AddHttpClient("payment", client =>
+builder.Services.AddHttpClient("PaymentClient", client =&gt;
 {
-    client.BaseAddress = new Uri("http://paymentapi:8080");
+    client.BaseAddress = new Uri(paymentApiUrl);
 })
-.AddTransientHttpErrorPolicy(policy =>
-    policy.CircuitBreakerAsync(
-        handledEventsAllowedBeforeBreaking: 3,       // Desarma se falhar 3x consecutivas
-        durationOfBreak: TimeSpan.FromSeconds(30),   // Permanece aberto por 30s
-        onBreak: (outcome, breakDelay) => Console.WriteLine("⚠️ Disjuntor ABERTO! Bloqueando chamadas."),
-        onReset: () => Console.WriteLine("✅ Disjuntor FECHADO! Pagamento recuperado.")
-    )
-);
+.AddPolicyHandler((services, _) =&gt;
+    services.GetRequiredService&lt;CircuitBreakerMonitor&gt;().Policy);
 
-var app = builder.Build();
-
-// Endpoint de Criação de Pedido
-app.MapPost("/order", async (IHttpClientFactory clientFactory) =>
-{
-    var invClient = clientFactory.CreateClient("inventory");
-    var payClient = clientFactory.CreateClient("payment");
-
-    // 1. Chama Inventory
-    var invRes = await invClient.GetAsync("/inventory");
-    if (!invRes.IsSuccessStatusCode)
-        return Results.Problem("Estoque indisponível.");
-
-    // 2. Chama Payment
-    var payRes = await payClient.GetAsync("/payment");
-    if (!payRes.IsSuccessStatusCode)
-        return Results.Problem("Falha no pagamento.");
-
-    return Results.Ok(new { status = "Order Completed Successfully!" });
-});
-
-app.Run();</code></pre>
+// OrderProcessor faz POST /inventory/reserve e depois
+// POST /payment/process. Se o pagamento falhar, tenta
+// POST /inventory/release/{reservationId}.
+// O endpoint POST /order exige Idempotency-Key.</code></pre>
           </div>
         </div>
 
@@ -1926,7 +1941,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             </div>
             <pre><code>services:
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.76.0
     container_name: jaeger
     ports:
       - "16686:16686" # Interface Web do Jaeger
@@ -1937,11 +1952,11 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
 
   gatewayapi:
     build:
-      context: ./GatewayApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: GatewayApi/Dockerfile
     container_name: gatewayapi
     ports:
-      - "5000:8080" # ÚNICA porta pública exposta para o cliente!
+      - "5000:8080" # Entrada do laboratório; não habilita autenticação
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -1951,13 +1966,15 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
 
   orderapi:
     build:
-      context: ./OrderApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: OrderApi/Dockerfile
     container_name: orderapi
-    # Sem "ports:" expostas - 100% protegida na rede interna do Docker!
+    # Sem portas publicadas no host; serviços do Compose ainda podem acessá-la.
     environment:
       - InventoryApiUrl=http://inventoryapi:8080 # Service Discovery DNS
       - PaymentApiUrl=http://paymentapi:8080     # Service Discovery DNS
+      - Demo__AllowFailureSimulation=true
+      - Demo__AllowCircuitBreakerReset=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
     depends_on:
@@ -1967,10 +1984,10 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
 
   inventoryapi:
     build:
-      context: ./InventoryApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: InventoryApi/Dockerfile
     container_name: inventoryapi
-    # Sem "ports:" expostas - protegida internamente
+    # Sem portas publicadas no host.
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
@@ -1979,15 +1996,25 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
 
   paymentapi:
     build:
-      context: ./PaymentApi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: PaymentApi/Dockerfile
     container_name: paymentapi
-    # Sem "ports:" expostas - protegida internamente
+    # Sem portas publicadas no host.
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
     depends_on:
-      - jaeger</code></pre>
+      - jaeger
+
+  blazorfrontend:
+    build:
+      context: .
+      dockerfile: BlazorFrontend/Dockerfile
+    container_name: blazorfrontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gatewayapi</code></pre>
           </div>
         </div>
 
@@ -2032,17 +2059,17 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             <h3>🔍 Simulador Visual de Tracing do Jaeger</h3>
           </div>
           <p class="sim-desc">
-            Clique no botão para simular um pedido. Veja o <strong>Trace ID</strong> sendo gerado e os <strong>Spans</strong> crescendo na tela com seus tempos reais!
+            Simulação visual local: não chama a API nem grava um trace no Jaeger. Observe um <strong>Trace ID</strong> de exemplo e tempos ilustrativos para entender a hierarquia dos <strong>Spans</strong>.
           </p>
 
           <div class="sim-controls">
-            <button id="btn-run-trace" class="btn-primary">▶️ Fazer Pedido de Teste (POST /order)</button>
-            <span id="trace-status" class="trace-status-text">Pronto para disparar</span>
+            <button id="btn-run-trace" class="btn-primary" aria-controls="trace-visual-container">▶️ Iniciar simulação de trace</button>
+            <span id="trace-status" class="trace-status-text" role="status" aria-live="polite" aria-atomic="true">Pronto para simular</span>
           </div>
 
           <div class="interactive-trace-box" id="trace-visual-container">
             <div class="trace-info-header">
-              <div><strong>Trace ID:</strong> <span id="current-trace-id" class="code-tag">Nenhum gerado</span></div>
+              <div><strong>Trace ID de exemplo:</strong> <span id="current-trace-id" class="code-tag">Nenhum gerado</span></div>
               <div><strong>Duração Total:</strong> <span id="current-trace-duration" class="code-tag">0 ms</span></div>
               <div><strong>Spans:</strong> <span id="current-span-count" class="code-tag">0 / 4</span></div>
             </div>
@@ -2077,7 +2104,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <div class="span-label">
                   <span class="dot-service inv-color"></span>
                   <span>InventoryApi</span>
-                  <small>GET /inventory (DNS)</small>
+                  <small>POST /inventory/reserve (DNS)</small>
                 </div>
                 <div class="span-bar-container">
                   <div class="span-bar-animated bar-inv" id="bar-inv">0 ms</div>
@@ -2089,7 +2116,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <div class="span-label">
                   <span class="dot-service pay-color"></span>
                   <span>PaymentApi</span>
-                  <small>GET /payment (DNS)</small>
+                  <small>POST /payment/process (DNS)</small>
                 </div>
                 <div class="span-bar-container">
                   <div class="span-bar-animated bar-pay" id="bar-pay">0 ms</div>
@@ -2098,7 +2125,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             </div>
 
             <div class="span-tags-detail" id="span-tags-box">
-              <span class="detail-hint">👉 Clique em "Disparar Novo Pedido com Trace Completo" para ver o Gateway e as 3 APIs correlacionados em tempo real!</span>
+              <span class="detail-hint">👉 Inicie a simulação para visualizar a relação entre o Gateway e as APIs. Os dados exibidos são ilustrativos.</span>
             </div>
           </div>
         </div>
@@ -2110,10 +2137,10 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             <h3>⚡ Simulador de Circuit Breaker (Polly)</h3>
           </div>
           <p class="sim-desc">
-            Veja a máquina de estados funcionar. Marque a opção <em>"Simular Queda da PaymentApi"</em> e envie pedidos repetidos para ver o disjuntor desarmar!
+            Simulador didático local, sem chamadas às APIs. Marque a opção de falha e envie requisições simuladas para acompanhar os estados do disjuntor.
           </p>
 
-          <div class="cb-dashboard">
+          <div class="cb-dashboard" role="status" aria-live="polite" aria-atomic="true">
             <div class="cb-state-display">
               <div class="cb-bulb" id="cb-bulb">🟢</div>
               <div class="cb-state-info">
@@ -2130,7 +2157,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
               </div>
               <div class="metric-item">
                 <span class="m-val" id="cb-total-blocked">0</span>
-                <span class="m-lbl">Chamadas Bloqueadas (0ms)</span>
+                <span class="m-lbl">Chamadas simuladas bloqueadas</span>
               </div>
               <div class="metric-item">
                 <span class="m-val" id="cb-cooldown">0s</span>
@@ -2143,14 +2170,14 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
             <label class="toggle-control">
               <input type="checkbox" id="toggle-payment-crash">
               <span class="toggle-slider"></span>
-              <span class="toggle-text">🚨 Derrubar PaymentApi (Gerar Erro 500)</span>
+              <span class="toggle-text">🚨 Simular falhas (apenas neste simulador local)</span>
             </label>
 
             <button id="btn-cb-send" class="btn-primary">🛒 Enviar Requisição para OrderApi</button>
             <button id="btn-cb-reset" class="btn-outline">🔄 Resetar Disjuntor</button>
           </div>
 
-          <div class="cb-log-window" id="cb-log-list">
+          <div class="cb-log-window" id="cb-log-list" role="log" aria-live="polite" aria-relevant="additions">
             <div class="log-entry info">Sistema pronto. O disjuntor está FECHADO e aguardando requisições.</div>
           </div>
         </div>
@@ -2174,7 +2201,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <button class="opt-btn" data-correct="true">B) Para amarrar todas as chamadas feitas entre diferentes microsserviços em uma mesma linha do tempo.</button>
                 <button class="opt-btn" data-correct="false">C) Para reiniciar o Docker quando a memória encher.</button>
               </div>
-              <div class="feedback-msg"></div>
+              <div class="feedback-msg" role="status" aria-live="polite"></div>
             </div>
 
             <!-- Questão 2 -->
@@ -2185,7 +2212,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <button class="opt-btn" data-correct="true">B) Ele bloqueia chamadas instantaneamente em 0ms para não travar a aplicação com requisições presas.</button>
                 <button class="opt-btn" data-correct="false">C) Ele apaga os dados do banco de dados.</button>
               </div>
-              <div class="feedback-msg"></div>
+              <div class="feedback-msg" role="status" aria-live="polite"></div>
             </div>
 
             <!-- Questão 3 -->
@@ -2196,7 +2223,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <button class="opt-btn" data-correct="false">B) Fazer o CSS do site carregar mais rápido.</button>
                 <button class="opt-btn" data-correct="false">C) Evitar o uso de contêineres Docker.</button>
               </div>
-              <div class="feedback-msg"></div>
+              <div class="feedback-msg" role="status" aria-live="polite"></div>
             </div>
 
             <!-- Questão 4 -->
@@ -2207,7 +2234,7 @@ ENTRYPOINT ["dotnet", "OrderApi.dll"]</code></pre>
                 <button class="opt-btn" data-correct="true">B) Para ter uma única entrada segura na porta 5000 (YARP) com rede interna privada, enquanto o Docker DNS resolve os IPs que mudam dinamicamente.</button>
                 <button class="opt-btn" data-correct="false">C) Porque o Docker não permite criar mais de 1 contêiner sem um proxy.</button>
               </div>
-              <div class="feedback-msg"></div>
+              <div class="feedback-msg" role="status" aria-live="polite"></div>
             </div>
           </div>
         </div>
